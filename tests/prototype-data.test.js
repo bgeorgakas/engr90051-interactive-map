@@ -13,7 +13,6 @@ const ROOT = path.resolve(__dirname, "..");
 const EXPECTED = [
   { id: "legacy_2100", file: "data/flood_extent_2100.json", scenario: "planning_overlay_union", data_kind: "planning_overlay", synthetic: false },
   { id: "demo_2010", file: "data/flood_extent_2010.json", scenario: "synthetic_demo_2010", data_kind: "synthetic_demo", synthetic: true },
-  { id: "demo_current", file: "data/flood_extent_current.json", scenario: "synthetic_demo_current", data_kind: "synthetic_demo", synthetic: true },
 ];
 
 function fixture(dataset = DATASETS[0]) {
@@ -27,16 +26,15 @@ function fixture(dataset = DATASETS[0]) {
   };
 }
 
-test("catalogue restores exactly the three original files in their intended order", () => {
-  assert.equal(DATASETS.length, 3);
+test("catalogue retains only 2100 and 2010 in their intended order", () => {
+  assert.equal(DATASETS.length, 2);
   assert.deepEqual(DATASETS.map(({ id, file, scenario, data_kind, synthetic }) => ({ id, file, scenario, data_kind, synthetic })), EXPECTED);
   assert.deepEqual(DATASETS.map((dataset) => dataset.label), [
     "2100 — 1% AEP (climate change)",
     "2010 flood event (indicative)",
-    "Current day — 1% AEP (indicative)",
   ]);
-  assert.equal(new Set(DATASETS.map((dataset) => dataset.id)).size, 3);
-  assert.equal(new Set(DATASETS.map((dataset) => dataset.file)).size, 3);
+  assert.equal(new Set(DATASETS.map((dataset) => dataset.id)).size, 2);
+  assert.equal(new Set(DATASETS.map((dataset) => dataset.file)).size, 2);
 });
 
 test("catalogue and every metadata entry are immutable", () => {
@@ -54,8 +52,6 @@ test("legacy display labels are qualified with their real planning/synthetic pro
   assert.match(DATASETS[0].description, /not a verified 2100 flood model/i);
   assert.match(DATASETS[1].description, /Synthetic demonstration/i);
   assert.match(DATASETS[1].description, /not observed or modelled 2010 flooding/i);
-  assert.match(DATASETS[2].description, /Synthetic demonstration/i);
-  assert.match(DATASETS[2].description, /not a verified current-day flood model or a 1% AEP result/i);
   for (const dataset of DATASETS) {
     assert.equal(dataset.source_url, "scripts/transform.py");
     assert.equal(fs.existsSync(path.join(ROOT, dataset.source_url)), true);
@@ -176,9 +172,16 @@ test("every feature is checked, not just the first feature", () => {
   }
 });
 
-test("synthetic 2010 and current scenarios cannot be swapped despite sharing their kind", () => {
-  assert.throws(() => validateExtent(fixture(DATASETS[1]), DATASETS[2]));
-  assert.throws(() => validateExtent(fixture(DATASETS[2]), DATASETS[1]));
+test("current-day data remains archived and cannot be accepted as an active layer", () => {
+  const archived = {
+    id: "demo_current", file: "data/flood_extent_current.json", scenario: "synthetic_demo_current",
+    data_kind: "synthetic_demo", synthetic: true,
+  };
+  assert.equal(fs.existsSync(path.join(ROOT, archived.file)), true);
+  const input = JSON.parse(fs.readFileSync(path.join(ROOT, archived.file), "utf8"));
+  assert.throws(() => validateExtent(input, archived), /Unknown or inconsistent/);
+  assert.throws(() => validateExtent(input, DATASETS[1]), /provenance/);
+  assert.equal(DATASETS.some((dataset) => dataset.id === archived.id || dataset.file === archived.file), false);
 });
 
 test("passing provenance validation does not replace the separate geometry validation", () => {

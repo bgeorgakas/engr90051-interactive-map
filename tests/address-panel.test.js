@@ -6,8 +6,8 @@ const assert = require("node:assert/strict");
 const { create } = require("../js/address-panel.js");
 const { prepareCollection, lookupPoint } = require("../js/address-lookup.js");
 
-const DATA_FILES = ["data/flood_extent_2100.json", "data/flood_extent_2010.json", "data/flood_extent_current.json"];
-const LAYER_LABELS = ["2100 — 1% AEP (climate change)", "2010 flood event (indicative)", "Current day — 1% AEP (indicative)"];
+const DATA_FILES = ["data/flood_extent_2100.json", "data/flood_extent_2010.json"];
+const LAYER_LABELS = ["2100 — 1% AEP (climate change)", "2010 flood event (indicative)"];
 
 class BasicElement {
   constructor(tagName, document) {
@@ -79,10 +79,6 @@ function dataContext() {
       {
         id: "demo_2010", state: "loaded", prepared: prepared([square(2, 2, 10)], 2), visible: false,
         metadata: { id: "demo_2010", label: LAYER_LABELS[1], data_kind: "synthetic_demo", description: "Synthetic demonstration, not an observed flood event.", file: DATA_FILES[1], source_url: "scripts/transform.py" },
-      },
-      {
-        id: "demo_current", state: "loaded", prepared: prepared([square(4, 4, 10)], 3), visible: false,
-        metadata: { id: "demo_current", label: LAYER_LABELS[2], data_kind: "synthetic_demo", description: "Synthetic demonstration, not a modelled flood event.", file: DATA_FILES[2], source_url: "scripts/transform.py" },
       },
     ],
   };
@@ -165,7 +161,8 @@ test("a search requires explicit candidate choice even for one result", async ()
   assert.equal(h.node("address-selection").hidden, false);
   assert.equal(h.node("selected-address").textContent, result.label);
   assert.equal(h.document.activeElement, h.node("selected-address"));
-  assert.equal(h.node("address-scenarios").children.length, 3);
+  assert.equal(h.node("address-scenarios").children.length, 2);
+  assert.match(h.node("address-search-status").textContent, /two retained prototype layers/);
 });
 
 test("loading state announces activity and prevents premature results", async () => {
@@ -339,22 +336,22 @@ test("candidate labels, kinds, metadata and selected address use literal text", 
   assert.equal(h.card(0).querySelectorAll("script").length, 0);
 });
 
-test("all three prototype layers independently report inside, boundary or outside", async () => {
-  for (const [point, planning, demo2010, current] of [
-    [[1, 1], "inside", "outside", "outside"],
-    [[2, 5], "inside", "boundary", "outside"],
-    [[0, 5], "boundary", "outside", "outside"],
-    [[11, 5], "outside", "inside", "inside"],
-    [[4, 5], "inside", "inside", "boundary"],
-    [[13, 5], "outside", "outside", "inside"],
-    [[15, 15], "outside", "outside", "outside"],
+test("both retained prototype layers independently report inside, boundary or outside", async () => {
+  for (const [point, planning, demo2010] of [
+    [[1, 1], "inside", "outside"],
+    [[2, 5], "inside", "boundary"],
+    [[0, 5], "boundary", "outside"],
+    [[11, 5], "outside", "inside"],
+    [[4, 5], "inside", "inside"],
+    [[13, 5], "outside", "outside"],
+    [[15, 15], "outside", "outside"],
   ]) {
     const h = harness({ results: [candidate({ lon: point[0], lat: point[1] })] });
     await h.search();
     h.choose();
     assert.equal(h.card(0).querySelector(".scenario-status").classList.contains(planning), true);
     assert.equal(h.card(1).querySelector(".scenario-status").classList.contains(demo2010), true);
-    assert.equal(h.card(2).querySelector(".scenario-status").classList.contains(current), true);
+    assert.equal(h.node("address-scenarios").children.length, 2);
   }
 });
 
@@ -426,7 +423,7 @@ test("loading, absent and invalid catchment data do not invent coverage", async 
 test("missing and invalid layer states show unavailable, not outside", async () => {
   for (const dataset of [undefined, { id: "legacy_2100", state: "failed" }, { id: "legacy_2100", state: "loaded" }, { id: "legacy_2100", state: "loaded", prepared: {} }]) {
     const context = dataContext();
-    context.datasets = [context.datasets[1], context.datasets[2], ...(dataset ? [dataset] : [])];
+    context.datasets = [context.datasets[1], ...(dataset ? [dataset] : [])];
     const h = harness({ context });
     await h.search();
     h.choose();
@@ -476,24 +473,25 @@ test("retry delegates loading and refresh replaces unavailable results", async (
   assert.equal(h.calls.search.length, 1);
 });
 
-test("all three prototype layers are checked when hidden and official or unrelated data is ignored", async () => {
+test("both retained layers are checked when hidden and archived or unrelated data is ignored", async () => {
   const context = dataContext();
   for (const dataset of context.datasets) dataset.visible = false;
-  for (const id of ["baseline", "future_2100", "unrelated_layer"]) {
+  for (const id of ["baseline", "future_2100", "demo_current", "unrelated_layer"]) {
     context.datasets.push({
       id, state: "loaded", visible: true,
-      get prepared() { throw new Error("Official or unrelated geometry must not be read"); },
-      get metadata() { throw new Error("Official or unrelated metadata must not be read"); },
+      get prepared() { throw new Error("Archived or unrelated geometry must not be read"); },
+      get metadata() { throw new Error("Archived or unrelated metadata must not be read"); },
     });
   }
   const h = harness({ context });
   await h.search();
   h.choose();
-  assert.equal(h.node("address-scenarios").children.length, 3);
-  for (let index = 0; index < 3; index += 1) assert.match(h.card(index).textContent, /Within displayed area/);
-  assert.match(h.node("address-snapshot").textContent, /all three prototype layers, even when hidden/);
+  assert.equal(h.node("address-scenarios").children.length, 2);
+  for (let index = 0; index < 2; index += 1) assert.match(h.card(index).textContent, /Within displayed area/);
+  assert.match(h.node("address-snapshot").textContent, /both retained prototype layers, even when hidden/);
   assert.match(h.node("address-snapshot").textContent, /geometry-only results, not evidence of flooding, safety, or climate-change effects/);
-  assert.doesNotMatch(h.node("address-scenarios").textContent, /Baseline|RCP 8\.5|Official source/);
+  assert.doesNotMatch(h.node("address-scenarios").textContent, /Baseline|RCP 8\.5|Official source|Current day/);
+  assert.equal(h.node("address-retry-data").hidden, true);
 });
 
 test("the geometry-only summary does not read obsolete snapshot dates or model metadata", async () => {
@@ -507,7 +505,22 @@ test("the geometry-only summary does not read obsolete snapshot dates or model m
   const h = harness({ context });
   await h.search();
   h.choose();
-  assert.equal(h.node("address-snapshot").textContent, "One approximate mapped point is checked against all three prototype layers, even when hidden. These are geometry-only results, not evidence of flooding, safety, or climate-change effects.");
+  assert.equal(h.node("address-snapshot").textContent, "One approximate mapped point is checked against both retained prototype layers, even when hidden. These are geometry-only results, not evidence of flooding, safety, or climate-change effects.");
+});
+
+test("an archived current-day failure cannot create a card or orphan retry action", async () => {
+  const context = dataContext();
+  context.datasets.push({ id: "demo_current", state: "failed", visible: false });
+  const h = harness({ context });
+  await h.search();
+  h.choose();
+  assert.deepEqual(h.node("address-scenarios").children.map((card) => card.querySelector("h4").textContent), LAYER_LABELS);
+  assert.equal(h.node("address-retry-data").hidden, true);
+  assert.doesNotMatch(h.node("address-scenarios").textContent, /Current day|Layer data unavailable/);
+  h.controller.refresh();
+  assert.equal(h.node("address-scenarios").children.length, 2);
+  assert.equal(h.node("address-retry-data").hidden, true);
+  assert.deepEqual(h.calls.retry, 0);
 });
 
 test("source links use only exact local layer paths and transformation script provenance", async () => {
@@ -528,7 +541,7 @@ test("source links use only exact local layer paths and transformation script pr
     const h = harness({ context });
     await h.search();
     h.choose();
-    for (let index = 0; index < 3; index += 1) {
+    for (let index = 0; index < 2; index += 1) {
       const links = h.card(index).querySelectorAll("a");
       assert.deepEqual(links.map((link) => link.href), [DATA_FILES[index], "scripts/transform.py"]);
       assert.equal(links[0].textContent, "Displayed layer data");
@@ -581,9 +594,7 @@ test("recenter and show-layer actions call map callbacks for the correct selecti
   assert.deepEqual(h.calls.showLayer, ["demo_2010"]);
   assert.equal(h.card(1).querySelector("button").disabled, true);
   assert.match(h.card(1).textContent, /Within displayed area/);
-  h.card(2).querySelector("button").click();
-  assert.deepEqual(h.calls.showLayer, ["demo_2010", "demo_current"]);
-  assert.equal(h.card(2).querySelector("button").disabled, true);
+  assert.equal(h.node("address-scenarios").children.length, 2);
 });
 
 test("a new search clears old selection and map pin before results arrive", async () => {
@@ -764,7 +775,7 @@ test("planning and synthetic provenance warnings remain visible outside collapse
   const h = harness();
   await h.search();
   h.choose();
-  for (let index = 0; index < 3; index += 1) {
+  for (let index = 0; index < 2; index += 1) {
     const card = h.card(index);
     const badge = card.querySelector(".scenario-data-kind");
     const details = card.querySelector("details");
@@ -787,8 +798,8 @@ test("provenance badges remain visible for missing or loading prototype layers",
   h.choose();
   assert.match(h.card(0).textContent, /Layer data unavailable/);
   assert.match(h.card(1).textContent, /Waiting for layer data/);
-  assert.match(h.card(2).textContent, /Layer data unavailable/);
-  for (let index = 0; index < 3; index += 1) {
+  assert.equal(h.node("address-scenarios").children.length, 2);
+  for (let index = 0; index < 2; index += 1) {
     const badge = h.card(index).querySelector(".scenario-data-kind");
     assert.equal(h.card(index).children.includes(badge), true);
     assert.equal(badge.hidden, false);

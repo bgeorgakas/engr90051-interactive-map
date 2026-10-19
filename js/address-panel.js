@@ -1,4 +1,4 @@
-/* Address lookup UI. Geometry-only checks against the three prototype layers. */
+/* Address lookup UI. Geometry-only checks against the two retained prototype layers. */
 (function (root) {
   "use strict";
   const LAYERS = {
@@ -12,13 +12,6 @@
     demo_2010: {
       label: "2010 flood event (indicative)",
       file: "data/flood_extent_2010.json",
-      badge: "Synthetic demo · not observed/modelled flooding",
-      explanation: "This is illustrative synthetic demo geometry, not observations of an actual flood event or outputs of a flood model. The title’s date and any AEP are not verified by these polygons.",
-      kind: "synthetic_demo",
-    },
-    demo_current: {
-      label: "Current day — 1% AEP (indicative)",
-      file: "data/flood_extent_current.json",
       badge: "Synthetic demo · not observed/modelled flooding",
       explanation: "This is illustrative synthetic demo geometry, not observations of an actual flood event or outputs of a flood model. The title’s date and any AEP are not verified by these polygons.",
       kind: "synthetic_demo",
@@ -178,14 +171,14 @@
         if (relation === "unavailable") hasFailedData = true;
       }
       node("address-retry-data").hidden = !hasFailedData;
-      node("address-snapshot").textContent = "One approximate mapped point is checked against all three prototype layers, even when hidden. These are geometry-only results, not evidence of flooding, safety, or climate-change effects.";
+      node("address-snapshot").textContent = "One approximate mapped point is checked against both retained prototype layers, even when hidden. These are geometry-only results, not evidence of flooding, safety, or climate-change effects.";
     }
 
     function select(result) {
       selection = result;
       candidatesNode.hidden = true;
       selectionNode.hidden = false;
-      status.textContent = "Location selected. Checking one approximate mapped point against the three prototype layers.";
+      status.textContent = "Location selected. Checking one approximate mapped point against the two retained prototype layers.";
       refresh();
       options.onSelect?.(result);
       node("selected-address").focus({ preventScroll: true });

@@ -1,0 +1,409 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          144.9533206838294,
+          -37.80718150119435
+        ]
+      },
+      "properties": {
+        "id": "com-bioretention-1568553",
+        "name": "Howard Street between Rosslyn Street and William Street — bioretention bed",
+        "type": "bioretention_bed",
+        "asset_id": "1568553",
+        "location_precision": "official_asset_record_point",
+        "accuracy_metres": null,
+        "source_date": "2023-03-14",
+        "assessment_date": "2023-03-14",
+        "dataset_processed_utc": "2025-09-04T12:04:36+00:00",
+        "checked_on": "2026-10-18",
+        "current_operation": "not verified",
+        "readiness": "usable_with_limitations",
+        "popup_en": "The City inventory classifies this asset as a bioretention bed. Raingardens filter runoff through vegetation and filter media; the marker does not indicate live performance or protection for nearby properties.",
+        "location_note": "Official garden-bed record coordinates; converted from EPSG:7855 to EPSG:4326 using Esri GeometryServer project. A point represents the garden-bed asset, not an inlet, exact polygon boundary or tree-pit identification.",
+        "source_urls": [
+          "https://data.melbourne.vic.gov.au/explore/dataset/renewals-for-nature-city-of-melbourne-garden-bed-inventory-2024/",
+          "https://www.melbournewater.com.au/building-and-works/stormwater-management/options-treating-stormwater/raingardens"
+        ],
+        "license": "CC BY 4.0 (asset data)",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "City of Melbourne; garden-bed survey supplied by Royal Botanic Gardens Victoria. Coordinates transformed and selected for this prototype research.",
+        "original_crs": "EPSG:7855",
+        "original_xy": [
+          319827.9389,
+          5813605.119
+        ],
+        "scope_note": "Within the prototype catchment polygon; this is not an independent verification of catchment boundaries or drainage connectivity.",
+        "coordinate_source_url": "https://data.melbourne.vic.gov.au/explore/dataset/renewals-for-nature-city-of-melbourne-garden-bed-inventory-2024/",
+        "status": "not verified",
+        "source_dates": [
+          {
+            "url": "https://data.melbourne.vic.gov.au/explore/dataset/renewals-for-nature-city-of-melbourne-garden-bed-inventory-2024/",
+            "date": "2023-03-14",
+            "date_type": "asset assessment"
+          },
+          {
+            "url": "https://www.melbournewater.com.au/building-and-works/stormwater-management/options-treating-stormwater/raingardens",
+            "date": "2022-10-27",
+            "date_type": "publication"
+          }
+        ],
+        "usable_for_address_risk": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          144.95345693182287,
+          -37.80713724240799
+        ]
+      },
+      "properties": {
+        "id": "com-bioretention-1568554",
+        "name": "Howard and William Street Reserve — bioretention bed",
+        "type": "bioretention_bed",
+        "asset_id": "1568554",
+        "location_precision": "official_asset_record_point",
+        "accuracy_metres": null,
+        "source_date": "2023-03-14",
+        "assessment_date": "2023-03-14",
+        "dataset_processed_utc": "2025-09-04T12:04:36+00:00",
+        "checked_on": "2026-10-18",
+        "current_operation": "not verified",
+        "readiness": "usable_with_limitations",
+        "popup_en": "The City inventory classifies this asset as a bioretention bed. Raingardens filter runoff through vegetation and filter media; the marker does not indicate live performance or protection for nearby properties.",
+        "location_note": "Official garden-bed record coordinates; converted from EPSG:7855 to EPSG:4326 using Esri GeometryServer project. A point represents the garden-bed asset, not an inlet, exact polygon boundary or tree-pit identification.",
+        "source_urls": [
+          "https://data.melbourne.vic.gov.au/explore/dataset/renewals-for-nature-city-of-melbourne-garden-bed-inventory-2024/",
+          "https://www.melbournewater.com.au/building-and-works/stormwater-management/options-treating-stormwater/raingardens"
+        ],
+        "license": "CC BY 4.0 (asset data)",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "City of Melbourne; garden-bed survey supplied by Royal Botanic Gardens Victoria. Coordinates transformed and selected for this prototype research.",
+        "original_crs": "EPSG:7855",
+        "original_xy": [
+          319839.8267,
+          5813610.293
+        ],
+        "scope_note": "Within the prototype catchment polygon; this is not an independent verification of catchment boundaries or drainage connectivity.",
+        "coordinate_source_url": "https://data.melbourne.vic.gov.au/explore/dataset/renewals-for-nature-city-of-melbourne-garden-bed-inventory-2024/",
+        "status": "not verified",
+        "source_dates": [
+          {
+            "url": "https://data.melbourne.vic.gov.au/explore/dataset/renewals-for-nature-city-of-melbourne-garden-bed-inventory-2024/",
+            "date": "2023-03-14",
+            "date_type": "asset assessment"
+          },
+          {
+            "url": "https://www.melbournewater.com.au/building-and-works/stormwater-management/options-treating-stormwater/raingardens",
+            "date": "2022-10-27",
+            "date_type": "publication"
+          }
+        ],
+        "usable_for_address_risk": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          144.95404777591554,
+          -37.80684205617743
+        ]
+      },
+      "properties": {
+        "id": "com-bioretention-1568555",
+        "name": "William Street between Rosslyn Street and Victoria Street — bioretention bed",
+        "type": "bioretention_bed",
+        "asset_id": "1568555",
+        "location_precision": "official_asset_record_point",
+        "accuracy_metres": null,
+        "source_date": "2023-03-14",
+        "assessment_date": "2023-03-14",
+        "dataset_processed_utc": "2025-09-04T12:04:36+00:00",
+        "checked_on": "2026-10-18",
+        "current_operation": "not verified",
+        "readiness": "usable_with_limitations",
+        "popup_en": "The City inventory classifies this asset as a bioretention bed. Raingardens filter runoff through vegetation and filter media; the marker does not indicate live performance or protection for nearby properties.",
+        "location_note": "Official garden-bed record coordinates; converted from EPSG:7855 to EPSG:4326 using Esri GeometryServer project. A point represents the garden-bed asset, not an inlet, exact polygon boundary or tree-pit identification.",
+        "source_urls": [
+          "https://data.melbourne.vic.gov.au/explore/dataset/renewals-for-nature-city-of-melbourne-garden-bed-inventory-2024/",
+          "https://www.melbournewater.com.au/building-and-works/stormwater-management/options-treating-stormwater/raingardens"
+        ],
+        "license": "CC BY 4.0 (asset data)",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "City of Melbourne; garden-bed survey supplied by Royal Botanic Gardens Victoria. Coordinates transformed and selected for this prototype research.",
+        "original_crs": "EPSG:7855",
+        "original_xy": [
+          319891.1278,
+          5813644.188
+        ],
+        "scope_note": "Within the prototype catchment polygon; this is not an independent verification of catchment boundaries or drainage connectivity.",
+        "coordinate_source_url": "https://data.melbourne.vic.gov.au/explore/dataset/renewals-for-nature-city-of-melbourne-garden-bed-inventory-2024/",
+        "status": "not verified",
+        "source_dates": [
+          {
+            "url": "https://data.melbourne.vic.gov.au/explore/dataset/renewals-for-nature-city-of-melbourne-garden-bed-inventory-2024/",
+            "date": "2023-03-14",
+            "date_type": "asset assessment"
+          },
+          {
+            "url": "https://www.melbournewater.com.au/building-and-works/stormwater-management/options-treating-stormwater/raingardens",
+            "date": "2022-10-27",
+            "date_type": "publication"
+          }
+        ],
+        "usable_for_address_risk": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          144.962761,
+          -37.802792
+        ]
+      },
+      "properties": {
+        "id": "lincoln-square-smart-tank",
+        "name": "Lincoln Square stormwater harvesting and flood-mitigation system",
+        "type": "stormwater_harvesting_and_detention",
+        "location_precision": "site_representative",
+        "accuracy_metres": null,
+        "location_note": "Official park landmark coordinate; NOT the underground tank coordinate.",
+        "checked_on": "2026-10-18",
+        "readiness": "usable_as_labelled_project_marker",
+        "current_operation": "not independently verified",
+        "popup_en": "Underground storage at Lincoln Square captures stormwater for park irrigation. The system can be emptied before heavy rain to provide space for incoming runoff and help limit downstream flooding. Current condition is unverified.",
+        "source_urls": [
+          "https://participate.melbourne.vic.gov.au/elizabethstreet/plan-overview",
+          "https://msd.unimelb.edu.au/public-programs/online-collections/symposiums/retrofit-symposium/site-visits/lincoln-square-water-sensitive-urban-design"
+        ],
+        "coordinate_source_url": "https://data.melbourne.vic.gov.au/explore/dataset/landmarks-and-places-of-interest-including-schools-theatres-health-services-spor/",
+        "coordinate_license": "CC BY 4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "City of Melbourne, landmark/street data; representative location selected for this prototype research. Project description sources linked separately.",
+        "limitation": "Historical/project evidence only; no current performance, maintenance, available storage or property-level protection is established.",
+        "documented_capacity_litres": 2000000,
+        "capacity_context": "Published project capacity, not current available storage.",
+        "license": "CC BY 4.0 (coordinate data only; project descriptions are original paraphrases of linked sources)",
+        "status": "not independently verified",
+        "source_dates": [
+          {
+            "url": "https://participate.melbourne.vic.gov.au/elizabethstreet/plan-overview",
+            "date": null,
+            "date_type": "publication date not established"
+          },
+          {
+            "url": "https://msd.unimelb.edu.au/public-programs/online-collections/symposiums/retrofit-symposium/site-visits/lincoln-square-water-sensitive-urban-design",
+            "date": null,
+            "date_type": "publication date not established"
+          }
+        ],
+        "usable_for_address_risk": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          144.958018,
+          -37.808205
+        ]
+      },
+      "properties": {
+        "id": "qvm-rainwater-harvesting",
+        "name": "Queen Victoria Market rainwater harvesting system",
+        "type": "roofwater_harvesting",
+        "location_precision": "street_section_representative",
+        "accuracy_metres": null,
+        "location_note": "Representative point on Queen Street between Therry and Franklin, selected using the historic schematic. The documented tank was west of the street; this is NOT its surveyed position.",
+        "checked_on": "2026-10-18",
+        "readiness": "usable_as_labelled_project_marker",
+        "current_operation": "renewal/current configuration not confirmed",
+        "popup_en": "A documented rainwater system collects runoff from market shed roofs for toilet flushing, reducing drinking-water demand and runoff to the Elizabeth Street drainage system. The historic system included a 600 kL underground tank. Current condition is unverified.",
+        "source_urls": [
+          "https://www.clearwatervic.com.au/resources/queen-victoria-market-rainwater-harvesting-case-study",
+          "https://mvga-prod-files.s3.ap-southeast-4.amazonaws.com/public/about-council/committees-meetings/meeting-archive/MeetingAgendaItemAttachments/679/12219/MAR15%2520FMC2%2520AGENDA%2520ITEM%25206.1.pdf",
+          "https://www.clearwatervic.com.au/sites/default/files/2026-03/Schematic-overview-of-system.pdf"
+        ],
+        "coordinate_source_url": "https://data.melbourne.vic.gov.au/explore/dataset/street-names/",
+        "coordinate_license": "CC BY 4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "City of Melbourne, landmark/street data; representative location selected for this prototype research. Project description sources linked separately.",
+        "limitation": "Historical/project evidence only; no current performance, maintenance, available storage or property-level protection is established.",
+        "documented_capacity_litres": 600000,
+        "capacity_context": "capacity of the system documented in the 2013 case study, not a verified 2026 renewal capacity",
+        "license": "CC BY 4.0 (coordinate data only; project descriptions are original paraphrases of linked sources)",
+        "status": "renewal/current configuration not confirmed",
+        "source_dates": [
+          {
+            "url": "https://www.clearwatervic.com.au/resources/queen-victoria-market-rainwater-harvesting-case-study",
+            "date": "2013-02-27",
+            "date_type": "publication"
+          },
+          {
+            "url": "https://mvga-prod-files.s3.ap-southeast-4.amazonaws.com/public/about-council/committees-meetings/meeting-archive/MeetingAgendaItemAttachments/679/12219/MAR15%2520FMC2%2520AGENDA%2520ITEM%25206.1.pdf",
+            "date": "2015-03-10",
+            "date_type": "publication"
+          },
+          {
+            "url": "https://www.clearwatervic.com.au/sites/default/files/2026-03/Schematic-overview-of-system.pdf",
+            "date": null,
+            "date_type": "publication date not established"
+          }
+        ],
+        "usable_for_address_risk": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          144.961473,
+          -37.813629
+        ]
+      },
+      "properties": {
+        "id": "little-bourke-raingarden-tree-pits",
+        "name": "Little Bourke Street raingarden tree pits",
+        "type": "raingarden_tree_pits",
+        "location_precision": "street_section_representative",
+        "accuracy_metres": null,
+        "location_note": "Derived street-section point; not the precise asset location or footprint.",
+        "checked_on": "2026-10-18",
+        "readiness": "usable_as_labelled_project_marker",
+        "current_operation": "not verified",
+        "popup_en": "The 2015 City inventory records raingarden tree pits on this Little Bourke Street block. This is a street-section marker. Current condition is unverified.",
+        "source_urls": [
+          "https://mvga-prod-files.s3.ap-southeast-4.amazonaws.com/public/about-council/committees-meetings/meeting-archive/MeetingAgendaItemAttachments/679/12219/MAR15%2520FMC2%2520AGENDA%2520ITEM%25206.1.pdf",
+          "https://www.melbournewater.com.au/building-and-works/stormwater-management/options-treating-stormwater/raingardens"
+        ],
+        "coordinate_source_url": "https://data.melbourne.vic.gov.au/explore/dataset/street-names/",
+        "coordinate_license": "CC BY 4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "City of Melbourne, landmark/street data; representative location selected for this prototype research. Project description sources linked separately.",
+        "limitation": "Historical/project evidence only; no current performance, maintenance, available storage or property-level protection is established.",
+        "documented_completion_year": 2006,
+        "source_date": "2015",
+        "license": "CC BY 4.0 (coordinate data only; project descriptions are original paraphrases of linked sources)",
+        "status": "not verified",
+        "source_dates": [
+          {
+            "url": "https://mvga-prod-files.s3.ap-southeast-4.amazonaws.com/public/about-council/committees-meetings/meeting-archive/MeetingAgendaItemAttachments/679/12219/MAR15%2520FMC2%2520AGENDA%2520ITEM%25206.1.pdf",
+            "date": "2015-03-10",
+            "date_type": "publication"
+          },
+          {
+            "url": "https://www.melbournewater.com.au/building-and-works/stormwater-management/options-treating-stormwater/raingardens",
+            "date": "2022-10-27",
+            "date_type": "publication"
+          }
+        ],
+        "usable_for_address_risk": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          144.959499,
+          -37.80627
+        ]
+      },
+      "properties": {
+        "id": "victoria-elizabeth-infiltration-tree-pits",
+        "name": "Victoria Street infiltration tree pits",
+        "type": "infiltration_tree_pits",
+        "location_precision": "intersection_representative",
+        "accuracy_metres": null,
+        "location_note": "Official street-line intersection; source does not identify each pit or which corner.",
+        "checked_on": "2026-10-18",
+        "readiness": "usable_as_labelled_project_marker",
+        "current_operation": "not verified",
+        "popup_en": "The 2015 City inventory records infiltration tree pits at Victoria and Elizabeth streets. This marker locates the intersection, not an individual pit. Current condition is unverified.",
+        "source_urls": [
+          "https://mvga-prod-files.s3.ap-southeast-4.amazonaws.com/public/about-council/committees-meetings/meeting-archive/MeetingAgendaItemAttachments/679/12219/MAR15%2520FMC2%2520AGENDA%2520ITEM%25206.1.pdf"
+        ],
+        "coordinate_source_url": "https://data.melbourne.vic.gov.au/explore/dataset/street-names/",
+        "coordinate_license": "CC BY 4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "City of Melbourne, landmark/street data; representative location selected for this prototype research. Project description sources linked separately.",
+        "limitation": "Historical/project evidence only; no current performance, maintenance, available storage or property-level protection is established.",
+        "documented_completion_year": 2012,
+        "source_date": "2015",
+        "license": "CC BY 4.0 (coordinate data only; project descriptions are original paraphrases of linked sources)",
+        "status": "not verified",
+        "source_dates": [
+          {
+            "url": "https://mvga-prod-files.s3.ap-southeast-4.amazonaws.com/public/about-council/committees-meetings/meeting-archive/MeetingAgendaItemAttachments/679/12219/MAR15%2520FMC2%2520AGENDA%2520ITEM%25206.1.pdf",
+            "date": "2015-03-10",
+            "date_type": "publication"
+          }
+        ],
+        "usable_for_address_risk": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          144.962823,
+          -37.816574
+        ]
+      },
+      "properties": {
+        "id": "collins-permeable-bluestone",
+        "name": "Collins Street permeable bluestone paving",
+        "type": "permeable_pavement",
+        "location_precision": "street_section_representative",
+        "accuracy_metres": null,
+        "location_note": "Derived street-section point; not the precise asset location or footprint.",
+        "checked_on": "2026-10-18",
+        "readiness": "usable_as_labelled_project_marker",
+        "current_operation": "not verified",
+        "popup_en": "The 2015 City inventory records permeable bluestone paving on this Collins Street block. This marker represents the street section. Current condition is unverified.",
+        "source_urls": [
+          "https://mvga-prod-files.s3.ap-southeast-4.amazonaws.com/public/about-council/committees-meetings/meeting-archive/MeetingAgendaItemAttachments/679/12219/MAR15%2520FMC2%2520AGENDA%2520ITEM%25206.1.pdf"
+        ],
+        "coordinate_source_url": "https://data.melbourne.vic.gov.au/explore/dataset/street-names/",
+        "coordinate_license": "CC BY 4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "City of Melbourne, landmark/street data; representative location selected for this prototype research. Project description sources linked separately.",
+        "limitation": "Historical/project evidence only; no current performance, maintenance, available storage or property-level protection is established.",
+        "documented_completion_year": 2013,
+        "source_date": "2015",
+        "license": "CC BY 4.0 (coordinate data only; project descriptions are original paraphrases of linked sources)",
+        "status": "not verified",
+        "source_dates": [
+          {
+            "url": "https://mvga-prod-files.s3.ap-southeast-4.amazonaws.com/public/about-council/committees-meetings/meeting-archive/MeetingAgendaItemAttachments/679/12219/MAR15%2520FMC2%2520AGENDA%2520ITEM%25206.1.pdf",
+            "date": "2015-03-10",
+            "date_type": "publication"
+          }
+        ],
+        "usable_for_address_risk": false
+      }
+    }
+  ],
+  "metadata": {
+    "description": "Selected water-sensitive urban design and stormwater project markers for an educational prototype; not a complete asset inventory.",
+    "prepared_on": "2026-10-19",
+    "source_checked_on": "2026-10-18",
+    "coordinate_reference": "WGS84 longitude/latitude; published coordinate precision does not establish survey accuracy.",
+    "location_limitations": "Three features use official asset-record points. Five use representative park, street-section or intersection points, not surveyed facility positions.",
+    "performance_limitations": "No feature establishes current operation, available storage, maintenance condition or flood protection for an individual address."
+  }
+}

@@ -26,8 +26,19 @@ const failedOptionalLayers = new Set();
 
 function reportLayerFailure(name) {
   failedOptionalLayers.add(name);
+  renderOptionalFailures();
+}
+
+function renderOptionalFailures() {
   mapLoadWarning.textContent = `Could not load: ${[...failedOptionalLayers].join(", ")}. Missing data does not mean no flooding.`;
-  mapLoadWarning.hidden = false;
+  mapLoadWarning.hidden = failedOptionalLayers.size === 0;
+  document.getElementById("retry-map-content").hidden =
+    !["Flood infrastructure", "Historic flood stories"].some((name) => failedOptionalLayers.has(name));
+}
+
+function clearLayerFailure(name) {
+  failedOptionalLayers.delete(name);
+  renderOptionalFailures();
 }
 
 function fetchOverlay(url, name, style) {
@@ -75,13 +86,12 @@ const catchmentLayer = fetchOverlay("data/catchment.json", "Elizabeth Street cat
   return addOverlay(overlay);
 });
 
-// Restore the original three prototype layers, in their original draw order.
+// Retain the 2100/2010 prototype layers; current-day is archived, not loaded.
 // Their legacy names are retained; the persistent notices explain their data types.
 const prototypeDatasets = PrototypeData.DATASETS;
 const prototypeStyles = [
   { color: "#0284c7", weight: 1, fillColor: "#7dd3fc", fillOpacity: 0.35 },
   { color: "#7c3aed", weight: 1, fillColor: "#a78bfa", fillOpacity: 0.4 },
-  { color: "#1e3a8a", weight: 1, fillColor: "#1d4ed8", fillOpacity: 0.45 },
 ];
 prototypeDatasets.forEach((dataset, index) => {
   map.createPane(dataset.id);
@@ -309,60 +319,236 @@ const storyPanelTitle = document.getElementById("story-panel-title");
 const storyPanelDescription = document.getElementById("story-panel-description");
 const storyPanelCredit = document.getElementById("story-panel-credit");
 const storyPanelLinks = document.getElementById("story-panel-links");
+const storyPanelMeta = document.getElementById("story-panel-meta");
+const storyImageNotice = document.getElementById("story-image-notice");
+let storyReturnFocus = null;
+
+function safeExternalURL(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password ? url.href : null;
+  } catch (_) { return null; }
+}
+
+storyPanelImage.addEventListener("error", () => {
+  if (storyPanel.hidden || !storyPanelImage.getAttribute("src")) return;
+  storyPanelImage.style.display = "none";
+  storyImageNotice.hidden = false;
+});
+storyPanelImage.addEventListener("load", () => { storyImageNotice.hidden = true; });
 
 function openStoryPanel(story) {
-  addressPanel?.close();
-  storyPanelImage.style.display = story.image ? "" : "none";
-  if (story.image) {
-    storyPanelImage.src = story.image;
-    storyPanelImage.alt = story.title;
+  storyReturnFocus = document.activeElement;
+  if (!document.getElementById("address-panel").hidden) addressPanel?.close();
+  const imageURL = safeExternalURL(story.image);
+  storyPanelImage.style.display = imageURL ? "" : "none";
+  storyImageNotice.hidden = true;
+  storyPanelImage.removeAttribute("src");
+  if (imageURL) {
+    storyPanelImage.src = imageURL;
+    storyPanelImage.alt = story.image_alt || story.title;
   }
 
-  storyPanelVideoWrapper.style.display = story.video ? "" : "none";
-  storyPanelVideo.src = story.video
-    ? `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(story.video.url)}&show_text=false`
+  const videoURL = safeExternalURL(story.video?.url);
+  storyPanelVideoWrapper.style.display = videoURL ? "" : "none";
+  storyPanelVideo.src = videoURL
+    ? `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(videoURL)}&show_text=false`
     : "";
 
   storyPanelTitle.textContent = story.title;
   storyPanelDescription.textContent = story.description || "";
+  storyPanelMeta.textContent = `${story.event_date || story.year || "Historical record"} · ${story.location_note || "Approximate story location; not a measured flood boundary."}`;
 
   storyPanelCredit.style.display = story.credit ? "" : "none";
   storyPanelCredit.textContent = story.credit || "";
 
-  storyPanelLinks.innerHTML = "";
+  storyPanelLinks.replaceChildren();
   (story.links || []).forEach(({ label, url }) => {
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.textContent = `${label} →`;
-    storyPanelLinks.appendChild(a);
+    const href = safeExternalURL(url);
+    if (href) storyPanelLinks.appendChild(sourceLink(`${label} →`, href));
   });
+  const provenance = document.getElementById("story-provenance-content");
+  provenance.replaceChildren();
+  document.getElementById("story-provenance").open = false;
+  [story.coordinate_attribution, story.media_rights_note,
+    story.checked_on ? `Sources checked: ${story.checked_on} (not the event date).` : null]
+    .filter(Boolean).forEach((text) => {
+      const paragraph = document.createElement("p");
+      paragraph.textContent = text;
+      provenance.appendChild(paragraph);
+    });
+  [["Representative location source", story.coordinate_source_url],
+    [story.coordinate_license || "Coordinate licence", story.coordinate_license_url]]
+    .forEach(([label, url]) => {
+      const href = safeExternalURL(url);
+      if (href) {
+        const paragraph = document.createElement("p");
+        paragraph.appendChild(sourceLink(label, href));
+        provenance.appendChild(paragraph);
+      }
+    });
 
+  storyPanel.hidden = false;
   storyPanel.classList.add("visible");
+  document.getElementById("map-layout").classList.add("story-open");
+  if (map.getSize().x <= 640) layerControl.collapse();
+  storyPanel.scrollTop = 0;
+  storyPanelTitle.focus({ preventScroll: true });
 }
 
-function closeStoryPanel() {
+function closeStoryPanel(restoreFocus = false) {
   storyPanel.classList.remove("visible");
+  storyPanel.hidden = true;
+  document.getElementById("map-layout").classList.remove("story-open");
   storyPanelVideo.src = "";
+  if (restoreFocus) storyReturnFocus?.focus?.({ preventScroll: true });
 }
 
-document.getElementById("story-panel-close").addEventListener("click", closeStoryPanel);
+document.getElementById("story-panel-close").addEventListener("click", () => closeStoryPanel(true));
+storyPanel.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") { event.preventDefault(); closeStoryPanel(true); }
+});
 
-FloodData.fetchJSON("data/flood_stories.json")
-  .then((stories) => {
+let storiesLoaded = false;
+let infrastructureLoaded = false;
+const loadingContent = new Set();
+map.on("popupopen", () => document.getElementById("map-layout").classList.add("popup-open"));
+map.on("popupclose", () => document.getElementById("map-layout").classList.remove("popup-open"));
+
+async function loadFloodStories() {
+  if (storiesLoaded || loadingContent.has("stories")) return;
+  loadingContent.add("stories");
+  document.getElementById("story-status").textContent = "Loading historical records…";
+  try {
+    const stories = await FloodData.fetchJSON("data/flood_stories.json");
+    if (!Array.isArray(stories) || stories.length === 0 || stories.some((story) => !story || typeof story.title !== "string" ||
+        !story.title.trim() || typeof story.id !== "string" || !story.id.trim() ||
+        !Array.isArray(story.links) || story.links.some((link) => !link || typeof link.label !== "string" || !safeExternalURL(link.url)) ||
+        !Number.isFinite(story.lat) || !Number.isFinite(story.lng) ||
+        story.lat < -38 || story.lat > -37.6 || story.lng < 144.7 || story.lng > 145.3) ||
+        new Set(stories.map((story) => story.id)).size !== stories.length) {
+      throw new Error("Invalid historical story locations");
+    }
     const floodStoriesLayer = L.markerClusterGroup();
+    const list = document.getElementById("story-list");
+    list.replaceChildren();
     stories.forEach((story) => {
       floodStoriesLayer.addLayer(
-        L.marker([story.lat, story.lng], { icon: story.video ? videoIcon : cameraIcon }).on("click", () =>
+        L.marker([story.lat, story.lng], { icon: story.video ? videoIcon : cameraIcon, title: story.title, alt: story.title }).on("click", () =>
           openStoryPanel(story)
         )
       );
     });
+    [...stories].sort((a, b) => a.year - b.year).forEach((story) => {
+      const li = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = story.title;
+      button.addEventListener("click", () => {
+        if (!map.hasLayer(floodStoriesLayer)) floodStoriesLayer.addTo(map);
+        map.setView([story.lat, story.lng], 17);
+        openStoryPanel(story);
+      });
+      li.appendChild(button);
+      list.appendChild(li);
+    });
     floodStoriesLayer.addTo(map);
     layerControl.addOverlay(floodStoriesLayer, "Historic flood stories");
-  })
-  .catch((err) => {
+    storiesLoaded = true;
+    const events = new Set(stories.map((story) => story.event_id || story.id));
+    document.getElementById("story-status").textContent = `${stories.length} records · ${events.size} historical events. Points are approximate story locations, not flood extents.`;
+    clearLayerFailure("Historic flood stories");
+  } catch (err) {
     console.error("Failed to load flood stories", err);
+    document.getElementById("story-status").textContent = "Historical records could not be loaded.";
     reportLayerFailure("Historic flood stories");
+  } finally { loadingContent.delete("stories"); }
+}
+
+const facilitySymbols = {
+  storage: '<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v13c0 4 14 4 14 0V5M5 12c0 4 14 4 14 0"/>',
+  treepits: '<path d="M12 21V10M12 14C2 14 3 5 4 3c8 0 9 5 8 11ZM12 17c0-8 4-11 9-10 1 6-3 10-9 10ZM4 21h16"/>',
+  raingardens: '<path d="M12 2S5 10 5 14a7 7 0 0 0 14 0c0-4-7-12-7-12ZM9 15c0 2 1 3 3 3"/>',
+  paving: '<path d="M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z"/>',
+};
+
+function facilityIcon(category) {
+  return L.divIcon({
+    className: "infrastructure-marker",
+    html: `<div class="infrastructure-marker-badge infrastructure-${category.key}"><svg viewBox="0 0 24 24" aria-hidden="true">${facilitySymbols[category.key]}</svg></div>`,
+    iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18],
   });
+}
+
+async function loadInfrastructure() {
+  if (infrastructureLoaded || loadingContent.has("infrastructure")) return;
+  loadingContent.add("infrastructure");
+  const status = document.getElementById("infrastructure-status");
+  status.textContent = "Loading infrastructure records…";
+  try {
+    const collection = Infrastructure.validateCollection(await FloodData.fetchJSON("data/infrastructure.geojson"));
+    const group = L.markerClusterGroup({
+      maxClusterRadius: 32,
+      // Keep the small educational set stable while a popup pans into view.
+      animate: false,
+      animateAddingMarkers: false,
+      removeOutsideVisibleBounds: false,
+      iconCreateFunction(cluster) {
+        return L.divIcon({ className: "infrastructure-cluster", html: `<span>${cluster.getChildCount()}</span>`, iconSize: [38, 38] });
+      },
+    });
+    const list = document.getElementById("infrastructure-list");
+    list.replaceChildren();
+    collection.features.forEach((feature) => {
+      const category = Infrastructure.getCategory(feature.properties.type);
+      const [lon, lat] = feature.geometry.coordinates;
+      const popupContent = Infrastructure.createPopup(feature, document);
+      popupContent.setAttribute("tabindex", "-1");
+      const marker = L.marker([lat, lon], { icon: facilityIcon(category), title: feature.properties.name, alt: feature.properties.name })
+        .bindPopup(popupContent, { maxWidth: Math.min(320, map.getSize().x - 70),
+          maxHeight: Math.min(360, Math.max(120, map.getSize().y - 140)),
+          autoPanPaddingTopLeft: [15, 80], autoPanPaddingBottomRight: [15, 15], className: "infrastructure-popup-shell" })
+        .on("popupopen", () => popupContent.focus({ preventScroll: true }))
+        .on("click", () => {
+          if (!document.getElementById("address-panel").hidden) addressPanel?.close();
+          closeStoryPanel();
+        });
+      popupContent.querySelector("details")?.addEventListener("toggle", () => {
+        const container = popupContent.parentElement;
+        const scrollTop = container?.scrollTop || 0;
+        marker.getPopup()?.update();
+        if (container) container.scrollTop = scrollTop;
+      });
+      group.addLayer(marker);
+      const li = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = feature.properties.name;
+      button.addEventListener("click", () => {
+        if (!document.getElementById("address-panel").hidden) addressPanel?.close();
+        closeStoryPanel();
+        if (!map.hasLayer(group)) group.addTo(map);
+        map.setView([lat, lon], 18, { animate: false });
+        group.zoomToShowLayer(marker, () => marker.openPopup());
+      });
+      li.appendChild(button);
+      list.appendChild(li);
+    });
+    group.addTo(map);
+    layerControl.addOverlay(group, "Flood infrastructure (WSUD)");
+    infrastructureLoaded = true;
+    status.textContent = `${collection.features.length} asset / project markers. Some locations are approximate; open a marker for its source and limitations.`;
+    clearLayerFailure("Flood infrastructure");
+  } catch (err) {
+    console.error("Failed to load flood infrastructure", err);
+    status.textContent = "Infrastructure records could not be loaded.";
+    reportLayerFailure("Flood infrastructure");
+  } finally { loadingContent.delete("infrastructure"); }
+}
+
+document.getElementById("retry-map-content").addEventListener("click", () => {
+  loadInfrastructure();
+  loadFloodStories();
+});
+loadFloodStories();
+loadInfrastructure();

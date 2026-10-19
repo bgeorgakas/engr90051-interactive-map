@@ -1,9 +1,10 @@
 # Elizabeth Street flood-map prototype
 
-Leaflet-based research prototype. The map restores the team's original three
-layers, original display names and colours. These are planning/demo geometry,
-not verified current/2010/2100 flood scenarios. Address results use these same
-three layers only. This is not a live warning service or a flood-risk assessment.
+Leaflet-based research prototype. The map retains the team's 2010 and 2100
+layers, original display names and colours, and adds sourced infrastructure
+markers and historic stories. The two extent layers are planning/demo geometry,
+not verified 2010/2100 flood scenarios. Address results use these same two layers
+only. This is not a live warning service or a flood-risk assessment.
 
 ## Run locally
 
@@ -14,7 +15,7 @@ basemap tiles, address search and linked historic media.
 
 ## Active prototype layers
 
-All three layers are on by default, drawn in this order. Catchment and historic
+Both extent layers are on by default, drawn in this order. Catchment and historic
 stories remain available and on by default. `js/prototype-data.js` is the shared
 catalogue for loading, validation, map controls and address-result metadata.
 
@@ -22,19 +23,55 @@ catalogue for loading, validation, map controls and address-result metadata.
 | --- | --- | --- |
 | 2100 — 1% AEP (climate change) | `data/flood_extent_2100.json` | Merged SBO/LSIO planning boundaries, not a verified 2100 model |
 | 2010 flood event (indicative) | `data/flood_extent_2010.json` | Synthetic shapes, not an observed or modelled 2010 flood |
-| Current day — 1% AEP (indicative) | `data/flood_extent_current.json` | Synthetic shapes, not a current-day 1% AEP model |
 
 The names are retained for continuity, not as evidence of a date, probability or
 event. Persistent notices and address-card badges explain these limitations.
-The demo shapes were made by reducing the planning area towards 70% (current)
-and 85% (2010); the latter also restores portions within random storm cells.
-Their nesting/differences are design choices, not hydraulic or climate evidence.
+The 2010 demo shapes were made by reducing the planning area towards 85%, then
+restoring portions within random storm cells. The difference between the two
+layers is a design choice, not hydraulic or climate evidence.
 Original coordinates and honest file metadata are unchanged.
+
+The current-day layer has been removed from the map controls, loading and address
+checks to reduce visual clutter. `data/flood_extent_current.json` is retained as
+an archived synthetic demonstration file, not requested by the frontend. Its
+70% reduction does not represent a verified current-day flood model or 1% AEP.
 
 Loading fails visibly if provenance does not match the catalogue or geometry is
 invalid. Failed layers can be retried without duplicating controls or changing
 the user's visibility choices. Layer and drawing order do not depend on download
 completion order.
+
+## Educational infrastructure and historic stories
+
+`data/infrastructure.geojson` contains eight sourced infrastructure/project
+markers: three bioretention beds, Lincoln Square storage, the historical Queen
+Victoria Market rainwater-harvesting system, Little Bourke Street raingarden tree
+pits, Victoria/Elizabeth Street infiltration tree pits and Collins Street
+permeable paving. These are educational points, not a complete asset inventory.
+
+Three markers use official garden-bed asset-record coordinates, transformed from
+GDA2020 / MGA Zone 55 to WGS84. Five use official landmark or derived street-block
+representative points, explicitly labelled as approximate project locations;
+they are not surveyed tank, inlet, tree-pit or pavement boundaries. Popups retain
+location notes, source dates, source links and current-condition limitations.
+Published project descriptions and historical asset records do not confirm
+present-day operation, available storage, maintenance or flood-reduction
+performance. Infrastructure points do not participate in address geometry checks.
+
+Coordinate data is attributed to City of Melbourne under CC BY 4.0, with the
+garden-bed survey supplied by Royal Botanic Gardens Victoria. See the record's
+source and attribution fields for the dataset, transformation and source date.
+This data licence does not license unrelated project photos or news media.
+
+`data/flood_stories.json` now contains five story records: the two existing
+accounts of the same 1972 event, plus three distinct events (1862, 1882 and
+6 March 2010). The additions link to State Library Victoria archive records,
+the City catchment-plan timeline and the Bureau of Meteorology's 2010 climate
+statement. Their pins are representative reading locations, not surveyed flood
+extents, photograph viewpoints or property-level evidence. The 2010 story does
+not validate the synthetic 2010 extent layer. The SLV records for 1862 and 1882
+identify those individual images as out of copyright; archive links and credits
+are retained, and that statement does not apply to other media.
 
 ## Archived official model snapshots — not used by this page
 
@@ -86,13 +123,14 @@ layers. They do not produce or replace the archived `data/official/` files.
 ## Address results
 
 Search for a public address/place, then explicitly select a matching result.
-The panel checks that one approximate geocoded point against **all three active
+The panel checks that one approximate geocoded point against **both active
 prototype layers**, regardless of which layers are visible. It distinguishes
 inside, on a polygon boundary, outside the displayed area, loading, and
 unavailable data. Holes and every small component are retained in the checks.
 Permanent badges identify planning and synthetic layers; an intersection is
 only a geometry match, never a real flood-risk result. Archived official model
-snapshots are not loaded or used for address results.
+snapshots and the archived current-day layer are not loaded or used for address
+results. Infrastructure markers and story locations are not risk-assessment data.
 
 The catchment check describes the project's geographic scope, **not** the
 assessed flood coverage. These prototype shapes are not a flood assessment.
@@ -143,9 +181,10 @@ node --test tests/*.test.js
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_fetch_official_flood_data.py' -v
 ```
 
-Manual checks: all three original layers on at startup, no separate official
-baseline/future entries or network requests; toggle each original layer;
-open a polygon's provenance popup; search/select a public place; check all three
+Manual checks: both retained extent layers on at startup, no current-day or separate
+official baseline/future entries or network requests; toggle each retained layer;
+open a polygon's provenance popup; search/select a public place; check both
 prototype results and permanent type warnings; change/close a search; open a
-historic story; check a narrow phone viewport. Loading failures must be visible
+historic story and an infrastructure popup; check source/location notes and a
+narrow phone viewport. Loading failures must be visible
 with a retry button, not silently treated as an outside or safe result.
