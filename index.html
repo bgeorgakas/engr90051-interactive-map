@@ -32,27 +32,23 @@
     <h2 id="address-panel-title">Address lookup</h2>
     <button id="address-panel-close" type="button" aria-label="Close address results">&times;</button>
     </div>
-    <p class="address-panel-notice">Prototype layer matches only. “2010” is synthetic; “2100” uses planning boundaries, not a verified future model.</p>
     <p id="address-search-status" role="status" aria-live="polite"></p>
     <div id="address-candidates" hidden>
-      <p>Choose the matching address or place, then verify its pin on the map. Similar names may refer to different locations.</p>
+      <p>Choose your address or place, then check that the pin is in the right spot. Places can share the same name.</p>
       <ul id="address-candidate-list"></ul>
     </div>
     <section id="address-selection" hidden aria-labelledby="selected-address">
       <h3 id="selected-address" tabindex="-1"></h3>
       <p id="selected-coordinate"></p>
-      <p id="address-precision-note" class="address-precision-note">Approximate mapped point, not the whole property or a confirmed entrance. Verify the pin.</p>
-      <p id="address-catchment"></p>
+      <p id="address-precision-note" class="address-precision-note">Check that the pin is in the right place. It marks an approximate location, not the whole property or its entrance.</p>
       <div id="address-scenarios"></div>
-      <button id="address-retry-data" type="button" hidden>Retry layer data</button>
+      <button id="address-retry-data" type="button" hidden>Try loading the map data again</button>
       <details id="address-result-notes">
         <summary>What these results mean</summary>
-        <p>These results compare one approximate point with the two retained prototype layers, including layers hidden on the map. They are not live conditions, a flood-risk rating, a water-depth estimate or an official property assessment.</p>
-        <p>“2100” contains merged SBO/LSIO planning boundaries. “2010” contains synthetic shapes derived from those boundaries, not actual historic flooding.</p>
-        <p>The original layer names are retained for prototype continuity; they do not validate a year, event or probability. Differences between these shapes are not evidence of climate change.</p>
-        <p>Outside a displayed area does not mean safe, and missing data cannot be treated as an outside result. The catchment boundary is not an assessment-coverage boundary.</p>
-        <p>The separate official baseline and 2100 model snapshots are not loaded or used in this version.</p>
-        <p>Infrastructure and historic-story markers provide context only. They are not used to calculate these results or establish protection for this location.</p>
+        <p>We check whether your map pin falls inside each shaded area, even if you hide it. This does not tell you whether a property will flood, how deep the water could be, or what is happening now.</p>
+        <p>The “2100” area comes from a planning map, not a prediction for 2100. The “2010” area is a made-up example based on that map, not a record of the 2010 flood. Comparing them does not show the effects of climate change.</p>
+        <p>A location outside the shaded areas may still flood. If data is missing, we cannot check the location. The Elizabeth Street catchment outline shows the project area, not where complete flood information is available.</p>
+        <p>The separate official flood-model datasets are not used in this version. Infrastructure markers and flood stories add background information; they do not affect your result or tell you that a property is protected.</p>
       </details>
       <p id="address-snapshot"></p>
       <div class="address-selection-actions">

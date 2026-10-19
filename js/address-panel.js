@@ -5,15 +5,21 @@
     legacy_2100: {
       label: "2100 — 1% AEP (climate change)",
       file: "data/flood_extent_2100.json",
-      badge: "Planning boundaries · not a verified 2100 model",
-      explanation: "These are planning flood-control boundaries reused under the original prototype title, not a verified 2100 climate-change flood model. The geometry does not establish the title’s date or AEP.",
+      badge: "Planning map · not a prediction for 2100",
+      meaning: "“2100” means the year 2100. “1% AEP” means a 1 in 100 chance of a flood of this size or larger in any given year—not just once every 100 years. “Climate change” means the scenario considers how a changing climate could affect flooding.",
+      explanation: "Here, the shaded area comes from a planning map. It does not predict where flooding will happen in 2100.",
+      areaName: "displayed flood-planning area",
+      definitionSource: "https://www.melbournewater.com.au/about/publications/news/what-1-100-year-flood-event",
+      climateSource: "https://www.climatecouncil.org.au/resources/climate-change-floods/",
       kind: "planning_overlay",
     },
     demo_2010: {
       label: "2010 flood event (indicative)",
       file: "data/flood_extent_2010.json",
-      badge: "Synthetic demo · not observed/modelled flooding",
-      explanation: "This is illustrative synthetic demo geometry, not observations of an actual flood event or outputs of a flood model. The title’s date and any AEP are not verified by these polygons.",
+      badge: "Example only · not a record of the 2010 flood",
+      meaning: "“2010 flood event” refers to a flood in 2010. “Indicative” means a rough illustration, not an exact record of where the water reached.",
+      explanation: "The shaded area was made for this prototype. It does not show where flooding actually happened in 2010.",
+      areaName: "demo flood area",
       kind: "synthetic_demo",
     },
   };
@@ -89,32 +95,11 @@
       const context = options.getData();
       const point = [selection.lon, selection.lat];
       node("selected-address").textContent = selection.label;
-      node("selected-coordinate").textContent = `Mapped point: ${selection.lat.toFixed(5)}, ${selection.lon.toFixed(5)} (latitude, longitude)`;
+      node("selected-coordinate").textContent = `Map pin: ${selection.lat.toFixed(5)}, ${selection.lon.toFixed(5)} (latitude, longitude)`;
       const broadMatch = ["road", "street", "suburb", "neighbourhood", "quarter", "city", "town", "village", "municipality", "county", "state", "country", "postcode", "administrative"].includes(selection.kind);
       node("address-precision-note").textContent = broadMatch
-        ? "Street/area-level match, not a specific property. Try a numbered address for a more specific match, and verify the pin."
-        : "Approximate mapped point, not the whole property or a confirmed entrance. Verify the pin.";
-      const scope = node("address-catchment");
-      scope.className = "scope-neutral";
-      if (context.catchment?.state === "loaded" && context.catchment.prepared) {
-        try {
-          const relation = lookup(point, context.catchment.prepared).relation;
-          scope.textContent = relation === "inside"
-            ? "Within the Elizabeth Street project catchment. The catchment boundary does not establish model-study coverage."
-            : relation === "boundary"
-              ? "On the project catchment boundary. Check the pin location; this is not a model-study coverage boundary."
-              : "Outside the Elizabeth Street project catchment. This prototype only contains the Elizabeth Street datasets, not flood information for all of Melbourne.";
-          if (relation !== "inside") scope.className = "scope-warning";
-        } catch (_) {
-          scope.textContent = "Project catchment check unavailable. Do not infer study coverage from these results.";
-          scope.className = "scope-warning";
-        }
-      } else {
-        scope.textContent = context.catchment?.state === "loading"
-          ? "Checking the project catchment boundary…"
-          : "Project catchment boundary unavailable. Do not infer study coverage from these results.";
-      }
-
+        ? "This pin marks a street or area, not a specific property. Try adding a street number, and check that the pin is in the right place."
+        : "Check that the pin is in the right place. It marks an approximate location, not the whole property or its entrance.";
       scenarios.replaceChildren();
       let hasFailedData = false;
       for (const id of Object.keys(LAYERS)) {
@@ -133,11 +118,11 @@
           } catch (_) { relation = "unavailable"; }
         }
         const messages = {
-          inside: ["Within displayed area", "The approximate mapped point is inside this displayed geometry only. This is not a flood-risk, property, or climate-change assessment."],
-          boundary: ["On displayed boundary", "The approximate mapped point is on this displayed geometry’s edge. A small change in the pin location could change the result; verify the location carefully. This is a geometry-only check, not a flood-risk assessment."],
-          outside: ["Not within displayed area", "No intersection with this displayed geometry. This does not establish assessment coverage or confirm that the location is safe."],
-          unavailable: ["Layer data unavailable", "No geometry check could be made. Missing or invalid data does not mean there is no flood risk."],
-          loading: ["Waiting for layer data", "This result will update when this prototype layer finishes loading."],
+          inside: ["This address is within the flood prone area", ""],
+          boundary: [`This address is on the edge of the ${layer.areaName}`, "A small change in the pin location could change this result. Check that the pin matches your location."],
+          outside: [`This address is outside the ${layer.areaName}`, "Being outside this area does not mean the location is safe from flooding."],
+          unavailable: ["Map data unavailable", "We could not check this location because the map data is missing or could not be read. This does not mean there is no flood risk."],
+          loading: ["Loading map data…", "Your result will appear when this part of the map finishes loading."],
         };
         if (!messages[relation]) relation = "unavailable";
         const [heading, description] = messages[relation];
@@ -148,37 +133,42 @@
           if (details.open) expandedScenarios.add(id);
           else expandedScenarios.delete(id);
         });
-        details.appendChild(element("summary", "Explanation & source"));
-        details.appendChild(element("p", description, "scenario-description"));
+        details.appendChild(element("summary", "What does this label mean?"));
+        details.appendChild(element("p", layer.meaning, "scenario-description"));
         details.appendChild(element("p", layer.explanation, "scenario-metadata"));
-        if (metadata?.description) {
-          details.appendChild(element("p", metadata.description, "scenario-metadata"));
+        if (description) details.appendChild(element("p", description, "scenario-description"));
+        // Keep only the fixed terminology reference, never untrusted metadata URLs.
+        if (layer.definitionSource) {
+          const sources = element("div", undefined, "scenario-sources");
+          sources.appendChild(localLink("What 1% AEP means — Melbourne Water", layer.definitionSource));
+          details.appendChild(sources);
         }
-        // Use exact local allowlisted paths, never metadata URLs or official-model links.
-        details.appendChild(localLink("Displayed layer data", layer.file));
-        details.appendChild(localLink("How this layer was made", "scripts/transform.py"));
         card.appendChild(details);
-        const actions = element("div", undefined, "scenario-actions");
-        if (["inside", "boundary", "outside"].includes(relation)) {
-          const show = element("button", dataset.visible ? "Layer shown on map" : "Show layer on map");
+        if (layer.climateSource) {
+          const reading = element("p", undefined, "scenario-sources");
+          reading.appendChild(localLink("How does climate change influence the flood risk?", layer.climateSource));
+          card.appendChild(reading);
+        }
+        if (!dataset.visible && ["inside", "boundary", "outside"].includes(relation)) {
+          const actions = element("div", undefined, "scenario-actions");
+          const show = element("button", "Show layer on map");
           show.type = "button";
-          show.disabled = Boolean(dataset.visible);
           show.addEventListener("click", () => { options.onShowLayer?.(id); refresh(); });
           actions.appendChild(show);
+          card.appendChild(actions);
         }
-        card.appendChild(actions);
         scenarios.appendChild(card);
         if (relation === "unavailable") hasFailedData = true;
       }
       node("address-retry-data").hidden = !hasFailedData;
-      node("address-snapshot").textContent = "One approximate mapped point is checked against both retained prototype layers, even when hidden. These are geometry-only results, not evidence of flooding, safety, or climate-change effects.";
+      node("address-snapshot").textContent = "This checks the map pin against both areas, even if you hide them. It cannot tell you whether a property will flood.";
     }
 
     function select(result) {
       selection = result;
       candidatesNode.hidden = true;
       selectionNode.hidden = false;
-      status.textContent = "Location selected. Checking one approximate mapped point against the two retained prototype layers.";
+      status.textContent = "";
       refresh();
       options.onSelect?.(result);
       node("selected-address").focus({ preventScroll: true });
@@ -216,16 +206,16 @@
         candidates = results;
         showCandidates();
         status.textContent = results.length
-          ? `${results.length} match${results.length === 1 ? "" : "es"} found. Choose a location below to check its mapped point.`
+          ? `${results.length} match${results.length === 1 ? "" : "es"} found. Choose your location below.`
           : "No matching location found. Try a street number, street name and Melbourne, or a nearby public landmark.";
       } catch (error) {
         if (request !== generation || error.code === "CANCELLED") return;
         const messages = {
-          RATE_LIMIT: "Please wait a moment before searching again. The shared address service has a limited request rate.",
+          RATE_LIMIT: "Too many searches at once. Please wait a moment and try again.",
           TIMEOUT: "Address search timed out. Check your connection and try again.",
           INVALID_QUERY: "Enter between 3 and 200 characters, such as a public address or landmark in Melbourne.",
         };
-        status.textContent = messages[error.code] || "Address search is unavailable. Please try again later; no flood result has been calculated.";
+        status.textContent = messages[error.code] || "Address search is unavailable. Please try again later. We have not been able to check this location.";
       } finally {
         if (request === generation) busy(false);
       }
