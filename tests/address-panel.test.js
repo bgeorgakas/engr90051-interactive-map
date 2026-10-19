@@ -9,7 +9,27 @@ const { prepareCollection, lookupPoint } = require("../js/address-lookup.js");
 const DATA_FILES = ["data/flood_extent_2100.json", "data/flood_extent_2010.json"];
 const LAYER_LABELS = ["2100 — 1% AEP (climate change)", "2010 flood event (indicative)"];
 const AEP_DEFINITION = "https://www.melbournewater.com.au/about/publications/news/what-1-100-year-flood-event";
+const EXTENT_SOURCE = "https://participate.melbourne.vic.gov.au/amendment-c384";
 const CLIMATE_SOURCE = "https://www.climatecouncil.org.au/resources/climate-change-floods/";
+const PLANNING_TOPICS = ["What does 1% AEP mean?", "What does 2100 flood extent represent?", "How does climate change influence flooding?"];
+const DEMO_TOPICS = ["What does 2010 flood extent represent?"];
+// Requested screenshot copy is an editorial fixture, not validation of the map data.
+const SCREENSHOT_PARAGRAPHS = {
+  aep: [
+    "A 1% annual exceedance probability (AEP) means a flood of a particular size that has a 1% chance of occurring in any year.",
+    "You may hear this called a “1 in 100-year flood”, but it does not mean it happens only once every 100 years. These floods can occur close together, even in consecutive years. Therefore, a recent flood does not mean your area is safe from another.",
+    "Flood maps show areas that could be affected, but cannot tell you when flooding will happen. Knowing your risk, preparing a flood plan and following official warnings can help you stay safe.",
+  ],
+  extent2100: [
+    "The 2100 flood extent shows areas that may be affected by a severe flood with a 1% chance of occurring in any year. It includes flooding associated with both Melbourne Water’s main drains and the City of Melbourne’s council drains, assuming rainfall intensity increases by 18.5% due to climate change by 2100. It is a planning scenario, not an exact prediction of future flooding.",
+  ],
+  climate: [
+    "Climate change can make flooding more likely and more severe. As the air gets warmer, it can hold more water. This can lead to heavier rain falling in a shorter time. When too much rain falls quickly, drains and waterways may not be able to carry it away, causing water to build up in streets and low-lying areas. Warmer conditions can also give storms more energy and produce heavier rainfall. This means floods may happen more often, spread further and cause damage to homes, roads and services. Understanding this risk can help communities prepare and stay safer during severe weather.",
+  ],
+  extent2010: [
+    "The 2010 flood extent is an indicative map created for this website by trimming the larger 2100 flood extent. It provides a visual comparison showing how the mapped flood area could expand under projected climate conditions by 2100. However, it is not an official flood model, a verified boundary, or a record of where flooding occurred in 2010. Properties within the indicative area may not flood during every severe storm, while properties outside it may still be affected. The map should therefore be used only to support community awareness and discussion, not for property-specific assessment, planning, insurance, or emergency decisions.",
+  ],
+};
 
 class BasicElement {
   constructor(tagName, document) {
@@ -37,6 +57,7 @@ class BasicElement {
   setAttribute(name, value) { this.attributes.set(name, String(value)); }
   getAttribute(name) { return this.attributes.get(name) ?? null; }
   appendChild(child) { this.children.push(child); return child; }
+  contains(node) { return this === node || this.children.some((child) => child.contains(node)); }
   replaceChildren(...children) { this._text = ""; this.children = children; }
   addEventListener(type, callback) {
     if (!this.events.has(type)) this.events.set(type, []);
@@ -103,7 +124,7 @@ function harness({ context = dataContext(), results = [candidate()], search } = 
     activeElement: null,
     createElement: (tag) => new BasicElement(tag, document),
     getElementById(id) {
-      if (id === "address-catchment") throw new Error("The removed catchment result must not be requested");
+      if (["address-catchment", "address-snapshot"].includes(id)) throw new Error(`Removed address UI must not be requested: ${id}`);
       if (!nodes.has(id)) nodes.set(id, new BasicElement("div", document));
       return nodes.get(id);
     },
@@ -397,11 +418,11 @@ test("inside and boundary descriptions identify the displayed data without claim
   await h.search();
   h.choose();
   assert.equal(h.card(0).querySelector(".scenario-status").textContent, "This address is within the flood prone area");
-  assert.match(h.card(0).textContent, /does not predict where flooding will happen in 2100/);
+  assert.match(h.card(0).textContent, /Planning map · not a prediction for 2100/);
   assert.doesNotMatch(h.node("address-scenarios").textContent, /Intersecting source record|Melbourne Water · study/);
   assert.equal(h.card(1).querySelector(".scenario-status").textContent, "This address is on the edge of the demo flood area");
   assert.match(h.card(1).textContent, /small change in the pin location/);
-  assert.match(h.card(1).textContent, /does not show where flooding actually happened in 2010/);
+  assert.match(h.card(1).textContent, /Example only · not a record of the 2010 flood/);
   assert.match(h.node("selected-coordinate").textContent, /5\.00000, 2\.00000 \(latitude, longitude\)/);
 });
 
@@ -415,27 +436,29 @@ test("inside statuses use the requested exact text while preserving visible data
   ]);
   assert.equal(h.card(0).querySelector(".scenario-data-kind").textContent, "Planning map · not a prediction for 2100");
   assert.equal(h.card(1).querySelector(".scenario-data-kind").textContent, "Example only · not a record of the 2010 flood");
-  assert.match(h.card(0).textContent, /does not predict where flooding will happen in 2100/);
-  assert.match(h.card(1).textContent, /does not show where flooding actually happened in 2010/);
+  assert.match(h.card(0).textContent, /planning scenario, not an exact prediction of future flooding/);
+  assert.match(h.card(1).textContent, /not an official flood model, a verified boundary, or a record of where flooding occurred in 2010/);
 });
 
-test("label meanings come first and distinguish annual probability from an exact event record", async () => {
+test("four initially closed topics preserve the exact requested screenshot English", async () => {
   const h = harness();
   await h.search();
   h.choose();
-  const planningDetails = h.card(0).querySelector("details");
-  const demoDetails = h.card(1).querySelector("details");
-  for (const details of [planningDetails, demoDetails]) {
-    assert.equal(details.children[0].textContent, "What does this label mean?");
+  const planningDetails = h.card(0).querySelectorAll("details");
+  const demoDetails = h.card(1).querySelectorAll("details");
+  assert.deepEqual(planningDetails.map((details) => details.querySelector("summary").textContent), PLANNING_TOPICS);
+  assert.deepEqual(demoDetails.map((details) => details.querySelector("summary").textContent), DEMO_TOPICS);
+  assert.deepEqual(planningDetails.map((details) => details.getAttribute("data-topic")), ["aep", "extent", "climate"]);
+  assert.equal(demoDetails[0].getAttribute("data-topic"), "extent");
+  for (const details of [...planningDetails, ...demoDetails]) {
+    assert.equal(details.open, false);
     assert.equal(details.children[1].className, "scenario-description");
   }
-  assert.match(planningDetails.children[1].textContent, /2100.*year 2100.*changing climate could affect flooding/);
-  assert.match(planningDetails.children[1].textContent, /1% AEP.*1 in 100 chance.*this size or larger in any given year/);
-  assert.match(planningDetails.children[1].textContent, /not just once every 100 years/);
-  assert.match(planningDetails.textContent, /does not predict where flooding will happen in 2100/);
-  assert.match(demoDetails.children[1].textContent, /Indicative.*illustration, not an exact record/);
-  assert.match(demoDetails.textContent, /shaded area was made for this prototype/);
-  assert.match(demoDetails.textContent, /does not show where flooding actually happened in 2010/);
+  const paragraphs = (details) => details.querySelectorAll(".scenario-description").map((node) => node.textContent);
+  assert.deepEqual(paragraphs(planningDetails[0]), SCREENSHOT_PARAGRAPHS.aep);
+  assert.deepEqual(paragraphs(planningDetails[1]), SCREENSHOT_PARAGRAPHS.extent2100);
+  assert.deepEqual(paragraphs(planningDetails[2]), SCREENSHOT_PARAGRAPHS.climate);
+  assert.deepEqual(paragraphs(demoDetails[0]), SCREENSHOT_PARAGRAPHS.extent2010);
 });
 
 test("plain-language explanations do not read or duplicate dense dataset descriptions", async () => {
@@ -446,10 +469,10 @@ test("plain-language explanations do not read or duplicate dense dataset descrip
   const h = harness({ context });
   await h.search();
   h.choose();
-  for (const card of h.node("address-scenarios").children) {
-    assert.equal(card.querySelectorAll(".scenario-metadata").length, 1);
-    assert.equal(card.querySelectorAll(".scenario-description").length, 1);
-  }
+  assert.equal(h.card(0).querySelectorAll(".scenario-metadata").length, 0);
+  assert.equal(h.card(1).querySelectorAll(".scenario-metadata").length, 0);
+  assert.equal(h.card(0).querySelectorAll(".scenario-description").length, 5);
+  assert.equal(h.card(1).querySelectorAll(".scenario-description").length, 1);
 });
 
 test("a polygon hole reports no intersection without claiming safety or known coverage", async () => {
@@ -570,13 +593,12 @@ test("both retained layers are checked when hidden and archived or unrelated dat
   h.choose();
   assert.equal(h.node("address-scenarios").children.length, 2);
   for (let index = 0; index < 2; index += 1) assert.match(h.card(index).textContent, /This address is within the/);
-  assert.match(h.node("address-snapshot").textContent, /both areas, even if you hide them/);
-  assert.match(h.node("address-snapshot").textContent, /cannot tell you whether a property will flood/);
+  assert.equal(h.calls.lookup.length, 2);
   assert.doesNotMatch(h.node("address-scenarios").textContent, /Baseline|RCP 8\.5|Official source|Current day/);
   assert.equal(h.node("address-retry-data").hidden, true);
 });
 
-test("the geometry-only summary does not read obsolete snapshot dates or model metadata", async () => {
+test("educational topics do not read obsolete snapshot dates or model metadata", async () => {
   const context = dataContext();
   Object.defineProperty(context, "retrievedAt", { get() { throw new Error("No official snapshot dates"); } });
   for (const dataset of context.datasets) {
@@ -587,7 +609,9 @@ test("the geometry-only summary does not read obsolete snapshot dates or model m
   const h = harness({ context });
   await h.search();
   h.choose();
-  assert.equal(h.node("address-snapshot").textContent, "This checks the map pin against both areas, even if you hide them. It cannot tell you whether a property will flood.");
+  assert.equal(h.card(0).querySelectorAll("details").length, 3);
+  assert.equal(h.card(1).querySelectorAll("details").length, 1);
+  assert.equal(h.calls.lookup.length, 2);
 });
 
 test("an archived current-day failure cannot create a card or orphan retry action", async () => {
@@ -627,13 +651,14 @@ test("cards omit raw data and code links and retain only the fixed reading links
     h.choose();
     for (let index = 0; index < 2; index += 1) {
       const links = h.card(index).querySelectorAll("a");
-      const expectedLinks = index === 0 ? [AEP_DEFINITION, CLIMATE_SOURCE] : [];
+      const expectedLinks = index === 0 ? [AEP_DEFINITION, EXTENT_SOURCE, CLIMATE_SOURCE] : [];
       assert.deepEqual(links.map((link) => link.href), expectedLinks);
-      assert.equal(links.length, index === 0 ? 2 : 0);
+      assert.equal(links.length, index === 0 ? 3 : 0);
       assert.doesNotMatch(h.card(index).textContent, /Map data|How this area was created|Displayed layer data|How this layer was made/);
       if (index === 0) {
-        assert.equal(links[0].textContent, "What 1% AEP means — Melbourne Water");
-        assert.equal(links[1].textContent, "How does climate change influence the flood risk?");
+        assert.equal(links[0].textContent, AEP_DEFINITION);
+        assert.equal(links[1].textContent, EXTENT_SOURCE);
+        assert.equal(links[2].textContent, CLIMATE_SOURCE);
       }
       for (const link of links) {
         assert.equal(link.target, "_blank");
@@ -643,22 +668,22 @@ test("cards omit raw data and code links and retain only the fixed reading links
   }
 });
 
-test("climate reading is visible immediately after the closed 2100 explanation and absent from 2010", async () => {
+test("fixed source links stay inside their matching dropdown with no external climate CTA", async () => {
   const h = harness();
   await h.search();
   h.choose();
   const card = h.card(0);
-  const details = card.querySelector("details");
-  const reading = card.children[card.children.indexOf(details) + 1];
-  assert.equal(details.open, false);
-  assert.equal(reading.tagName, "p");
-  assert.equal(reading.className, "scenario-sources");
-  assert.equal(reading.hidden, false);
-  assert.equal(reading.querySelector("a").href, CLIMATE_SOURCE);
-  assert.equal(reading.querySelector("a").textContent, "How does climate change influence the flood risk?");
-  assert.deepEqual(details.querySelectorAll("a").map((link) => link.href), [AEP_DEFINITION]);
+  const topics = card.querySelectorAll("details");
+  for (const [index, details] of topics.entries()) {
+    assert.equal(details.open, false);
+    assert.deepEqual(details.querySelectorAll("a").map((link) => link.href), [[AEP_DEFINITION], [EXTENT_SOURCE], [CLIMATE_SOURCE]][index]);
+    assert.equal(details.querySelector(".scenario-sources").querySelector("span").textContent, "For detailed information, please visit:");
+    assert.equal(details.querySelector("a").textContent, details.querySelector("a").href);
+  }
+  assert.equal(card.children.some((child) => child.className === "scenario-sources"), false);
+  assert.doesNotMatch(card.textContent, /What does this label mean\?|How does climate change influence the flood risk\?/);
   assert.equal(h.card(1).querySelectorAll("a").length, 0);
-  assert.doesNotMatch(h.card(1).textContent, /How does climate change influence the flood risk/);
+  assert.doesNotMatch(h.card(1).textContent, /How does climate change influence flooding/);
 });
 
 test("choosing another candidate clears prior selection and restores candidate focus", async () => {
@@ -762,36 +787,84 @@ test("same-name candidates include distinct coordinates and retain their distinc
   assert.match(h.node("selected-coordinate").textContent, /-37\.81123, 144\.97123/);
 });
 
-test("scenario explanation details preserve their independent open state across refreshes", async () => {
+test("all topic dropdowns preserve independent layer-and-topic state across refresh and visibility changes", async () => {
   const h = harness();
   await h.search();
   h.choose();
-  const baseline = h.card(0).querySelector("details");
-  const future = h.card(1).querySelector("details");
-  assert.equal(baseline.open, false);
-  assert.equal(future.open, false);
-  assert.equal(baseline.querySelector("summary").textContent, "What does this label mean?");
-  baseline.open = true;
-  baseline.dispatch("toggle");
+  const topics = (index) => h.card(index).querySelectorAll("details");
+  const states = () => [topics(0).map((topic) => topic.open), topics(1).map((topic) => topic.open)];
+  const toggle = (layer, topic, open) => {
+    const details = topics(layer)[topic];
+    details.open = open;
+    details.dispatch("toggle");
+  };
+  assert.deepEqual(states(), [[false, false, false], [false]]);
+  toggle(0, 1, true);
   h.controller.refresh();
-  assert.notEqual(h.card(0).querySelector("details"), baseline);
-  assert.equal(h.card(0).querySelector("details").open, true);
-  assert.equal(h.card(1).querySelector("details").open, false);
-
-  const refreshedBaseline = h.card(0).querySelector("details");
-  const refreshedFuture = h.card(1).querySelector("details");
-  refreshedBaseline.open = false;
-  refreshedBaseline.dispatch("toggle");
-  refreshedFuture.open = true;
-  refreshedFuture.dispatch("toggle");
+  assert.deepEqual(states(), [[false, true, false], [false]], "The two extent topics must not share state");
+  toggle(0, 0, true);
+  toggle(0, 2, true);
+  toggle(1, 0, true);
   h.controller.refresh();
-  assert.equal(h.card(0).querySelector("details").open, false);
-  assert.equal(h.card(1).querySelector("details").open, true);
-
-  // Showing a layer also refreshes both cards without collapsing explanations.
+  assert.deepEqual(states(), [[true, true, true], [true]], "Topics may all be open without closing each other");
+  toggle(0, 0, false);
+  toggle(0, 1, false);
   h.card(1).querySelector("button").click();
-  assert.equal(h.card(0).querySelector("details").open, false);
-  assert.equal(h.card(1).querySelector("details").open, true);
+  assert.deepEqual(states(), [[false, false, true], [true]], "Showing a hidden layer must not clobber any topic state");
+  assert.equal(h.card(1).querySelector("button"), null);
+  h.context.datasets[0].visible = false;
+  h.controller.refresh();
+  assert.deepEqual(states(), [[false, false, true], [true]]);
+  h.card(0).querySelector("button").click();
+  assert.deepEqual(states(), [[false, false, true], [true]]);
+});
+
+test("queued toggles from replaced cards cannot overwrite current dropdown state", async () => {
+  const h = harness();
+  await h.search();
+  h.choose();
+  const obsolete = h.card(0).querySelectorAll("details");
+  obsolete[1].open = true;
+  obsolete[1].dispatch("toggle");
+  h.controller.refresh();
+  const current = h.card(0).querySelectorAll("details");
+  current[1].open = false;
+  current[1].dispatch("toggle");
+  current[2].open = true;
+  current[2].dispatch("toggle");
+  obsolete[1].dispatch("toggle");
+  obsolete[2].open = false;
+  obsolete[2].dispatch("toggle");
+  h.controller.refresh();
+  assert.deepEqual(h.card(0).querySelectorAll("details").map((topic) => topic.open), [false, false, true]);
+  assert.equal(h.card(1).querySelector("details").open, false);
+});
+
+test("failure and loading guidance stays visible while topic state survives retry and successful load", async () => {
+  const context = dataContext();
+  context.datasets[0].state = "failed";
+  context.datasets[0].prepared = undefined;
+  const h = harness({ context });
+  await h.search();
+  h.choose();
+  const topic = h.card(0).querySelectorAll("details")[2];
+  topic.open = true;
+  topic.dispatch("toggle");
+  assert.match(h.card(0).children.find((child) => child.className === "scenario-description").textContent, /map data is missing or could not be read/);
+  assert.equal(h.card(0).querySelector("button"), null);
+  h.node("address-retry-data").click();
+  assert.equal(h.calls.retry, 1);
+  context.datasets[0].state = "loading";
+  h.controller.refresh();
+  assert.match(h.card(0).children.find((child) => child.className === "scenario-description").textContent, /Your result will appear/);
+  assert.deepEqual(h.card(0).querySelectorAll("details").map((details) => details.open), [false, false, true]);
+  context.datasets[0].state = "loaded";
+  context.datasets[0].prepared = prepared();
+  h.controller.refresh();
+  assert.equal(h.card(0).querySelector(".scenario-status").textContent, "This address is within the flood prone area");
+  assert.equal(h.card(0).children.some((child) => child.className === "scenario-description"), false);
+  assert.deepEqual(h.card(0).querySelectorAll("details").map((details) => details.open), [false, false, true]);
+  assert.equal(h.node("address-retry-data").hidden, true);
 });
 
 test("an invalid prepared layer handle cannot offer a show-layer action", async () => {
@@ -889,15 +962,17 @@ test("planning and synthetic provenance warnings remain visible outside collapse
   for (let index = 0; index < 2; index += 1) {
     const card = h.card(index);
     const badge = card.querySelector(".scenario-data-kind");
-    const details = card.querySelector("details");
-    assert.equal(details.open, false);
+    const topics = card.querySelectorAll("details");
     assert.equal(card.children.includes(badge), true);
     assert.equal(badge.hidden, false);
-    assert.equal(details.querySelector(".scenario-data-kind"), null);
+    for (const details of topics) {
+      assert.equal(details.open, false);
+      assert.equal(details.querySelector(".scenario-data-kind"), null);
+    }
     assert.equal(badge.textContent, index === 0
       ? "Planning map · not a prediction for 2100"
       : "Example only · not a record of the 2010 flood");
-    assert.match(details.textContent, index === 0 ? /does not predict where flooding will happen in 2100/ : /does not show where flooding actually happened in 2010/);
+    assert.deepEqual(topics[index === 0 ? 1 : 0].querySelectorAll(".scenario-description").map((node) => node.textContent), index === 0 ? SCREENSHOT_PARAGRAPHS.extent2100 : SCREENSHOT_PARAGRAPHS.extent2010);
   }
 });
 
