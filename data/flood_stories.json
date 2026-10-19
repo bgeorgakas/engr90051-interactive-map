@@ -9,8 +9,25 @@
     "credit": "Image: Melbourne Water",
     "description": "On 17 February 1972, 76mm of rain fell on central Melbourne in a single hour, turning Elizabeth Street — built over the long-buried Williams Creek — into a torrent up to 1.5m deep. The flood stranded commuters, damaged cars, and caused hundreds of thousands of dollars in damage.",
     "links": [
-      { "label": "Read full story (Melbourne Water)", "url": "https://letstalk.melbournewater.com.au/flood-information/community-stories/1972-elizabeth-street-transformed" }
-    ]
+      {
+        "label": "Read full story (Melbourne Water)",
+        "url": "https://letstalk.melbournewater.com.au/flood-information/community-stories/1972-elizabeth-street-transformed"
+      }
+    ],
+    "event_id": "elizabeth-street-1972-02-17",
+    "event_date": "1972-02-17",
+    "location_precision": "story_representative_only",
+    "location_note": "Approximate Elizabeth Street story marker inherited from the original prototype; not a verified camera position or a flood boundary. Both 1972 stories describe the same event.",
+    "usable_for_address_risk": false,
+    "source_name": "Melbourne Water",
+    "source_dates": [
+      {
+        "url": "https://letstalk.melbournewater.com.au/flood-information/community-stories/1972-elizabeth-street-transformed",
+        "date": null,
+        "date_type": "publication date not established"
+      }
+    ],
+    "media_rights_note": "Existing prototype media/link retained; no new reuse licence is asserted by this update."
   },
   {
     "id": "1972-7news-flashback",
@@ -19,10 +36,159 @@
     "date": "1972",
     "lat": -37.8138,
     "lng": 144.9631,
-    "video": { "provider": "facebook", "url": "https://www.facebook.com/7NEWSMelbourne/videos/7-news-flashback-1972-flooding/1049147031814133/" },
+    "video": {
+      "provider": "facebook",
+      "url": "https://www.facebook.com/7NEWSMelbourne/videos/7-news-flashback-1972-flooding/1049147031814133/"
+    },
     "description": "Historic footage of the 1972 Elizabeth Street flood, reported by 7NEWS Melbourne.",
     "links": [
-      { "label": "Watch on Facebook", "url": "https://www.facebook.com/7NEWSMelbourne/videos/7-news-flashback-1972-flooding/1049147031814133/" }
-    ]
+      {
+        "label": "Watch on Facebook",
+        "url": "https://www.facebook.com/7NEWSMelbourne/videos/7-news-flashback-1972-flooding/1049147031814133/"
+      }
+    ],
+    "event_id": "elizabeth-street-1972-02-17",
+    "event_date": "1972-02-17",
+    "location_precision": "story_representative_only",
+    "location_note": "Approximate Elizabeth Street story marker inherited from the original prototype; not a verified camera position or a flood boundary. Both 1972 stories describe the same event.",
+    "usable_for_address_risk": false,
+    "source_name": "7NEWS Melbourne",
+    "source_dates": [
+      {
+        "url": "https://www.facebook.com/7NEWSMelbourne/videos/7-news-flashback-1972-flooding/1049147031814133/",
+        "date": null,
+        "date_type": "publication date not established"
+      }
+    ],
+    "media_rights_note": "Existing prototype media/link retained; no new reuse licence is asserted by this update."
+  },
+  {
+    "id": "elizabeth-street-1862-12-08",
+    "event_id": "elizabeth-street-1862-12-08",
+    "title": "Elizabeth Street flood, 8 December 1862",
+    "year": 1862,
+    "event_date": "1862-12-08",
+    "lat": -37.809929,
+    "lng": 144.961176,
+    "description": "A State Library Victoria image dated 8 December 1862 shows Elizabeth Street inundated, with people sheltering at a shop doorway and a cart being pulled through the street. It records an early CBD flood; this marker is an approximate story location, not a flood boundary.",
+    "source_name": "State Library Victoria",
+    "links": [
+      {
+        "label": "The Flood, Elizabeth St; 6 p.m; Dec. 8, 1862",
+        "url": "https://handle.slv.vic.gov.au/10381/289412"
+      },
+      {
+        "label": "Image attribution and rights (SLV manifest)",
+        "url": "https://rosetta.slv.vic.gov.au/delivery/iiif/presentation/2.1/IE558632/manifest"
+      }
+    ],
+    "location_precision": "story_representative_only",
+    "location_note": "Official representative point for Elizabeth Street; not the photographed/illustrated scene location. This is an approximate story marker, not a flood boundary.",
+    "coordinate_source_url": "https://data.melbourne.vic.gov.au/explore/dataset/street-names/",
+    "coordinate_source_record": "mccid_gis=276",
+    "coordinate_license": "CC BY 4.0",
+    "coordinate_license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "coordinate_attribution": "City of Melbourne, Street names, CC BY 4.0. Representative location selected for this prototype.",
+    "usable_for_address_risk": false,
+    "checked_on": "2026-10-18",
+    "source_dates": [
+      {
+        "url": "https://handle.slv.vic.gov.au/10381/289412",
+        "date": null,
+        "date_type": "publication date not separately established; event date from archive metadata"
+      }
+    ],
+    "image": "https://rosetta.slv.vic.gov.au/iiif/2/IE558632:FL20880283.jpg/full/800,/0/default.jpg",
+    "image_alt": "Archival image showing floodwater on Elizabeth Street, 8 December 1862.",
+    "credit": "State Library Victoria, H13599, The Flood, Elizabeth St; 6 p.m; Dec. 8, 1862. Creator not identified in the manifest. Out of copyright.",
+    "media_rights_note": "The item's own official IIIF manifest explicitly states: This work is out of copyright.",
+    "media_manifest_url": "https://rosetta.slv.vic.gov.au/delivery/iiif/presentation/2.1/IE558632/manifest",
+    "archive_id": "H13599 / IE558632"
+  },
+  {
+    "id": "elizabeth-street-1882-12-05",
+    "event_id": "elizabeth-street-1882-12-05",
+    "title": "Elizabeth Street flood, 5 December 1882",
+    "year": 1882,
+    "event_date": "1882-12-05",
+    "lat": -37.809929,
+    "lng": 144.961176,
+    "description": "An 1882 engraving records people navigating floodwater on Elizabeth Street during the 5 December flood. Held by State Library Victoria, it documents the street's long flood history. The illustration is a historical account, not a measured flood depth or mapped extent.",
+    "source_name": "State Library Victoria",
+    "links": [
+      {
+        "label": "Elizabeth street in flood, December 5",
+        "url": "https://handle.slv.vic.gov.au/10381/257565"
+      },
+      {
+        "label": "Image attribution and rights (SLV manifest)",
+        "url": "https://rosetta.slv.vic.gov.au/delivery/iiif/presentation/2.1/IE707542/manifest"
+      }
+    ],
+    "location_precision": "story_representative_only",
+    "location_note": "Official representative point for Elizabeth Street; not the photographed/illustrated scene location. This is an approximate story marker, not a flood boundary.",
+    "coordinate_source_url": "https://data.melbourne.vic.gov.au/explore/dataset/street-names/",
+    "coordinate_source_record": "mccid_gis=276",
+    "coordinate_license": "CC BY 4.0",
+    "coordinate_license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "coordinate_attribution": "City of Melbourne, Street names, CC BY 4.0. Representative location selected for this prototype.",
+    "usable_for_address_risk": false,
+    "checked_on": "2026-10-18",
+    "source_dates": [
+      {
+        "url": "https://handle.slv.vic.gov.au/10381/257565",
+        "date": null,
+        "date_type": "publication date not separately established; event date from archive metadata"
+      }
+    ],
+    "image": "https://rosetta.slv.vic.gov.au/iiif/2/IE707542:FL21073155.jpg/full/800,/0/default.jpg",
+    "image_alt": "Archival engraving depicting Elizabeth Street in flood on 5 December 1882.",
+    "credit": "F. A. Sleap (engraver), Elizabeth street in flood, December 5 (1882), State Library Victoria, A/S16/12/82/349. Out of copyright.",
+    "media_rights_note": "The item's own official IIIF manifest explicitly states: This work is out of copyright.",
+    "media_manifest_url": "https://rosetta.slv.vic.gov.au/delivery/iiif/presentation/2.1/IE707542/manifest",
+    "archive_id": "A/S16/12/82/349 / IE707542"
+  },
+  {
+    "id": "melbourne-cbd-2010-03-06",
+    "event_id": "melbourne-cbd-2010-03-06",
+    "title": "CBD flash flooding, 6 March 2010",
+    "year": 2010,
+    "event_date": "2010-03-06",
+    "lat": -37.818054,
+    "lng": 144.96491,
+    "description": "On 6 March 2010, a severe storm caused flash flooding along Elizabeth, Flinders and Spencer streets. The Bureau of Meteorology records intense rainfall concentrated into less than 30 minutes. This documented event does not establish the flood depth or risk at an individual address.",
+    "source_name": "City of Melbourne; Bureau of Meteorology",
+    "links": [
+      {
+        "label": "City of Melbourne (2015), Elizabeth Street Catchment Integrated Water Cycle Management Plan, printed p. 6 (PDF page 8)",
+        "url": "https://mvga-prod-files.s3.ap-southeast-4.amazonaws.com/public/2024-05/elizabeth-street-catchment-plan.pdf"
+      },
+      {
+        "label": "Bureau of Meteorology (2011, January 5), Annual Australian Climate Statement 2010, Flooding and storms section",
+        "url": "https://www.bom.gov.au/climate/current/annual/aus/2010/"
+      }
+    ],
+    "location_precision": "story_representative_only",
+    "location_note": "Southern endpoint of the official Elizabeth Street line near Flinders Street. This is an approximate story marker, not a flood boundary. This story does not validate the prototype's illustrative 2010 flood layer.",
+    "coordinate_source_url": "https://data.melbourne.vic.gov.au/explore/dataset/street-names/",
+    "coordinate_source_record": "mccid_gis=276",
+    "coordinate_license": "CC BY 4.0",
+    "coordinate_license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "coordinate_attribution": "City of Melbourne, Street names, CC BY 4.0. Representative location selected for this prototype.",
+    "usable_for_address_risk": false,
+    "checked_on": "2026-10-18",
+    "source_dates": [
+      {
+        "url": "https://mvga-prod-files.s3.ap-southeast-4.amazonaws.com/public/2024-05/elizabeth-street-catchment-plan.pdf",
+        "date": "2015",
+        "date_type": "publication"
+      },
+      {
+        "url": "https://www.bom.gov.au/climate/current/annual/aus/2010/",
+        "date": "2011-01-05",
+        "date_type": "publication"
+      }
+    ],
+    "credit": "Sources: City of Melbourne (2015) and Bureau of Meteorology (2011)."
   }
 ]

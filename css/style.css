@@ -263,6 +263,9 @@ header h1 {
 
 #story-panel-image {
   width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  background: #f8fafc;
   border-radius: 4px;
   margin-top: 1.5rem;
 }
@@ -270,6 +273,16 @@ header h1 {
 #story-panel-title {
   font-size: 1.05rem;
   margin: 0.75rem 0 0.5rem;
+  padding-right: 26px;
+}
+
+#story-panel-meta, #story-image-notice {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #475569;
+  padding: 9px 10px;
+  background: #f1f5f9;
+  border-radius: 5px;
 }
 
 #story-panel-description {
@@ -397,6 +410,49 @@ header h1 {
 #data-details summary { font-weight: 600; cursor: pointer; padding: 3px 0; }
 #retry-layer-data { margin-top: 6px; padding: 6px 10px; cursor: pointer; }
 
+.infrastructure-marker-badge {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  box-sizing: border-box;
+  border: 2px solid white;
+  border-radius: 9px;
+  box-shadow: 0 2px 5px #0f172a55;
+}
+.infrastructure-marker-badge svg { width: 20px; height: 20px; fill: none; stroke: white; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.infrastructure-storage { background: #075985; }
+.infrastructure-treepits { background: #3f6212; }
+.infrastructure-raingardens { background: #0f766e; }
+.infrastructure-paving { background: #7c5329; }
+.infrastructure-marker:hover .infrastructure-marker-badge { outline: 3px solid #fff; }
+.infrastructure-cluster { background: #d1fae5; border: 2px solid #0f766e; border-radius: 10px; display: grid; place-items: center; color: #064e3b; font-weight: 700; font-size: 14px; box-sizing: border-box; }
+.infrastructure-legend { display: flex; flex-wrap: wrap; gap: 5px 12px; border-top: 1px solid #e2e8f0; margin-top: 9px; padding-top: 9px; font-size: 0.72rem; }
+.infrastructure-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.infrastructure-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+.infrastructure-popup-shell .leaflet-popup-content { max-width: calc(100vw - 75px); }
+.infrastructure-popup { color: #1f2937; font: 13px/1.5 system-ui, sans-serif; overflow-wrap: anywhere; }
+.infrastructure-popup h3 { font-size: 15px; line-height: 1.35; margin: 0 0 8px; }
+.infrastructure-popup p { margin: 8px 0; }
+.infrastructure-popup a { color: #1e40af; }
+.infrastructure-popup details { margin-top: 10px; }
+.infrastructure-popup summary { cursor: pointer; font-weight: 600; padding: 5px 0; }
+.infrastructure-precision { display: inline-block; padding: 4px 7px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 4px; font-weight: 600; }
+.infrastructure-operation, .infrastructure-limitation { color: #78350f; }
+#story-provenance { font-size: 0.78rem; line-height: 1.5; margin-top: 16px; }
+#story-provenance summary { cursor: pointer; font-weight: 600; }
+#story-provenance p { margin: 8px 0; }
+#map-content-details { margin-top: 9px; }
+#map-content-details summary { font-weight: 600; cursor: pointer; padding: 3px 0; }
+.map-content-list { list-style: none; margin: 8px 0; padding: 0; }
+.map-content-list li + li { border-top: 1px solid #e2e8f0; }
+.map-content-list button { background: transparent; border: 0; color: #1e40af; font: inherit; text-align: left; padding: 8px 0; width: 100%; cursor: pointer; line-height: 1.4; }
+.map-content-list button:hover { text-decoration: underline; }
+#retry-map-content { margin-top: 7px; padding: 7px 10px; cursor: pointer; }
+.map-content-list button:focus-visible, #story-panel a:focus-visible, #story-panel button:focus-visible,
+.infrastructure-popup a:focus-visible, .infrastructure-popup summary:focus-visible,
+#map-content-details summary:focus-visible, #story-panel-title:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+
 @media (max-width: 640px) {
   header { height: auto; min-height: 48px; flex-wrap: wrap; padding: 9px 12px; gap: 8px; }
   header h1 { font-size: 0.9rem; white-space: normal; }
@@ -406,7 +462,10 @@ header h1 {
   #address-panel { top: auto; bottom: 0; right: 0; width: 100%; max-width: 100%; max-height: 58%; padding: 14px 14px max(14px, env(safe-area-inset-bottom)); border-radius: 12px 12px 0 0; }
   .address-panel-header { top: -14px; margin: -14px -14px 10px; padding: 12px 14px; }
   #map-layout.address-open #dataset-panel { display: none; }
+  #map-layout.story-open #dataset-panel { display: none; }
+  #map-layout.popup-open #dataset-panel { display: none; }
   #dataset-panel { width: 300px; bottom: 32px; max-height: 43%; font-size: 0.75rem; }
   .leaflet-control-layers { max-width: 230px; max-height: 220px; overflow: auto; font-size: 11px; }
-  #story-panel { max-width: 100%; }
+  #story-panel { top: auto; bottom: 0; width: 100%; max-width: 100%; max-height: 65%; border-radius: 12px 12px 0 0; }
+  #story-panel-image { max-height: 180px; }
 }

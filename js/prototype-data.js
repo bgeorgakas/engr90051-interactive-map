@@ -1,4 +1,4 @@
-/* Original prototype layers. Display names are legacy labels, not provenance. */
+/* Retained prototype layers. Display names are legacy labels, not provenance. */
 (function (root) {
   "use strict";
   const DATASETS = Object.freeze([
@@ -14,13 +14,6 @@
       file: "data/flood_extent_2010.json", scenario: "synthetic_demo_2010",
       data_kind: "synthetic_demo", synthetic: true,
       description: "Synthetic demonstration: the planning area was reduced towards 85% and partially restored within randomly placed storm cells. This is not observed or modelled 2010 flooding.",
-      source_url: "scripts/transform.py",
-    }),
-    Object.freeze({
-      id: "demo_current", label: "Current day — 1% AEP (indicative)",
-      file: "data/flood_extent_current.json", scenario: "synthetic_demo_current",
-      data_kind: "synthetic_demo", synthetic: true,
-      description: "Synthetic demonstration: the planning area was reduced towards 70%. This is not a verified current-day flood model or a 1% AEP result.",
       source_url: "scripts/transform.py",
     }),
   ]);
