@@ -769,9 +769,9 @@ test("address submit requires explicit selection before checking the same two di
   assert.deepEqual(h.map.pans.at(-1), [195, 0]);
   assert.deepEqual(h.scenarioStatuses().map((node) => node.className), Array(2).fill("scenario-status inside"));
   const content = h.element("address-scenarios").textContent;
-  assert.match(content, /Planning boundaries · not a verified 2100 model/);
-  assert.match(content, /Synthetic demo · not observed\/modelled flooding/);
-  assert.match(h.element("address-snapshot").textContent, /both retained prototype layers/);
+  assert.match(content, /Planning map · not a prediction for 2100/);
+  assert.match(content, /Example only · not a record of the 2010 flood/);
+  assert.match(h.element("address-snapshot").textContent, /both areas, even if you hide them/);
   assert.doesNotMatch(content, /Current day/);
   for (const dataset of CATALOG) {
     assert.equal(h.countRequests(dataset.file), 1);
@@ -836,16 +836,36 @@ test("a selected point updates automatically when pending prototype data finishe
   assert.equal(h.markers.length, 1);
 });
 
-test("outside the project catchment is a separate warning, not an automatic outside-layer result", async () => {
+test("address HTML and rendered results omit removed catchment, code links and disabled layer buttons", async () => {
+  const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  assert.doesNotMatch(html, /id=["']address-catchment["']/);
+  assert.doesNotMatch(html, /class=["']address-panel-notice["']/);
+  const css = fs.readFileSync(path.join(ROOT, "css/style.css"), "utf8");
+  assert.match(css, /#address-search-status:empty\s*\{\s*display:\s*none;\s*\}/);
+  const h = harness();
+  h.stubGeocoder([geocoded()]);
+  await h.settle();
+  await h.submit("Public test place Melbourne");
+  h.choose();
+  assert.equal(h.element("address-search-status").textContent, "");
+  for (const [index, card] of h.element("address-scenarios").children.entries()) {
+    assert.equal(card.querySelector(".scenario-status").textContent, "This address is within the flood prone area");
+    assert.equal(card.querySelector("button"), null);
+    assert.equal(card.querySelector(".scenario-actions"), null);
+    assert.equal(card.querySelectorAll("a").length, index === 0 ? 2 : 0);
+    assert.doesNotMatch(card.textContent, /Map data|How this area was created|Layer shown on map/);
+  }
+});
+
+test("the map catchment remains loaded without an address catchment result", async () => {
   const catchment = extent({ ...CATALOG[0], id: "catchment" }, [144.96, -37.81, 144.963, -37.80]);
   const h = harness({ "data/catchment.json": () => ok(catchment) });
   h.stubGeocoder([geocoded()]);
   await h.settle();
   await h.submit("Public test place Melbourne");
   h.choose();
-  assert.match(h.element("address-catchment").textContent, /Outside the Elizabeth Street project catchment/);
-  assert.match(h.element("address-catchment").textContent, /not flood information for all of Melbourne/);
-  assert.equal(h.element("address-catchment").className, "scope-warning");
+  assert.equal(h.countRequests("data/catchment.json"), 1);
+  assert.equal(h.control.overlays.some(({ name }) => /Elizabeth Street catchment/.test(name)), true);
   assert.deepEqual(h.scenarioStatuses().map((node) => node.className), Array(2).fill("scenario-status inside"));
 });
 
@@ -859,10 +879,9 @@ test("outside prototype extents within the catchment does not claim safety or of
   await h.settle();
   await h.submit("Public test place Melbourne");
   h.choose();
-  assert.match(h.element("address-catchment").textContent, /Within the Elizabeth Street project catchment/);
   assert.deepEqual(h.scenarioStatuses().map((node) => node.className), Array(2).fill("scenario-status outside"));
   for (const card of h.element("address-scenarios").children) {
-    assert.match(card.textContent, /does not establish assessment coverage or confirm that the location is safe/);
+    assert.match(card.textContent, /Being outside this area does not mean the location is safe from flooding/);
   }
 });
 
@@ -878,14 +897,15 @@ test("a hidden prototype layer is checked and can be shown without changing the 
   const futureCard = h.element("address-scenarios").children[1];
   assert.equal(futureCard.querySelector(".scenario-status").className, "scenario-status inside");
   assert.match(futureCard.textContent, /2010 flood event \(indicative\)/);
-  assert.match(futureCard.textContent, /Synthetic demo/);
+  assert.match(futureCard.textContent, /Example only · not a record of the 2010 flood/);
   assert.equal(futureCard.querySelector("button").textContent, "Show layer on map");
   futureCard.querySelector("button").dispatch("click");
   assert.equal(h.map.hasLayer(h.layer("demo_2010")), true);
   const refreshed = h.element("address-scenarios").children[1];
   assert.equal(refreshed.querySelector(".scenario-status").className, "scenario-status inside");
-  assert.equal(refreshed.querySelector("button").textContent, "Layer shown on map");
-  assert.equal(refreshed.querySelector("button").disabled, true);
+  assert.equal(refreshed.querySelector("button"), null);
+  assert.equal(refreshed.querySelector(".scenario-actions"), null);
+  assert.doesNotMatch(refreshed.textContent, /Layer shown on map/);
   assert.equal(h.countRequests(DEMO_2010), 1);
   assert.equal(h.geocoderRequests().length, 1);
 });
