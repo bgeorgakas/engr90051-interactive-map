@@ -194,7 +194,7 @@ header h1 {
 #address-panel .address-candidate { width: 100%; text-align: left; background: #fff; }
 #address-panel .address-candidate:hover { background: #eff6ff; border-color: #2563eb; }
 .candidate-kind { display: block; margin-top: 5px; color: #475569; font-size: 0.75rem; }
-#selected-coordinate, #address-snapshot { color: #475569; font-size: 0.75rem; }
+#selected-coordinate { color: #475569; font-size: 0.75rem; }
 .address-precision-note { color: #475569; font-size: 0.8rem; }
 .scope-warning, .scope-neutral { padding: 9px 10px; border: 1px solid; border-radius: 5px; }
 .scope-warning { background: #fffbeb; border-color: #fcd34d; color: #78350f; }
@@ -202,7 +202,10 @@ header h1 {
 .scenario-card { margin: 14px 0; padding: 12px; border: 1px solid #cbd5e1; border-radius: 7px; }
 #address-panel .scenario-card h4 { margin: 0 0 4px; font-size: 0.85rem; }
 .scenario-details { margin-top: 4px; font-size: 0.78rem; }
-.scenario-details summary { padding: 3px 0; cursor: pointer; color: #334155; }
+.scenario-details + .scenario-details { border-top: 1px solid #e2e8f0; }
+.scenario-details summary { padding: 10px 0; cursor: pointer; color: #334155; font-weight: 600; }
+.scenario-details summary:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.scenario-details p, #address-result-notes p { line-height: 1.6; }
 .scenario-status { display: inline-block; padding: 3px 7px; border-radius: 4px; font-weight: 600; }
 .scenario-status.inside, .scenario-status.boundary { background: #fef3c7; color: #78350f; }
 .scenario-status.outside { background: #e2e8f0; color: #334155; }
@@ -212,6 +215,7 @@ header h1 {
 .scenario-data-kind.synthetic_demo { background: #faf5ff; color: #6b21a8; }
 .scenario-description { font-size: 0.8rem; }
 .scenario-sources { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; margin-top: 10px; }
+.scenario-sources a { overflow-wrap: anywhere; }
 .scenario-actions, .address-selection-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .scenario-actions { margin-top: 10px; font-size: 0.8rem; }
 .scenario-actions a { padding: 7px 0; }

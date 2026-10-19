@@ -6,21 +6,58 @@
       label: "2100 — 1% AEP (climate change)",
       file: "data/flood_extent_2100.json",
       badge: "Planning map · not a prediction for 2100",
-      meaning: "“2100” means the year 2100. “1% AEP” means a 1 in 100 chance of a flood of this size or larger in any given year—not just once every 100 years. “Climate change” means the scenario considers how a changing climate could affect flooding.",
-      explanation: "Here, the shaded area comes from a planning map. It does not predict where flooding will happen in 2100.",
       areaName: "displayed flood-planning area",
-      definitionSource: "https://www.melbournewater.com.au/about/publications/news/what-1-100-year-flood-event",
-      climateSource: "https://www.climatecouncil.org.au/resources/climate-change-floods/",
       kind: "planning_overlay",
+      topics: [
+        {
+          id: "aep",
+          title: "What does 1% AEP mean?",
+          paragraphs: [
+            "A 1% annual exceedance probability (AEP) means a flood of a particular size that has a 1% chance of occurring in any year.",
+            "You may hear this called a “1 in 100-year flood”, but it does not mean it happens only once every 100 years. These floods can occur close together, even in consecutive years. Therefore, a recent flood does not mean your area is safe from another.",
+            "Flood maps show areas that could be affected, but cannot tell you when flooding will happen. Knowing your risk, preparing a flood plan and following official warnings can help you stay safe.",
+          ],
+          source: {
+            url: "https://www.melbournewater.com.au/about/publications/news/what-1-100-year-flood-event",
+          },
+        },
+        {
+          id: "extent",
+          title: "What does 2100 flood extent represent?",
+          paragraphs: [
+            "The 2100 flood extent shows areas that may be affected by a severe flood with a 1% chance of occurring in any year. It includes flooding associated with both Melbourne Water’s main drains and the City of Melbourne’s council drains, assuming rainfall intensity increases by 18.5% due to climate change by 2100. It is a planning scenario, not an exact prediction of future flooding.",
+          ],
+          source: {
+            url: "https://participate.melbourne.vic.gov.au/amendment-c384",
+          },
+        },
+        {
+          id: "climate",
+          title: "How does climate change influence flooding?",
+          paragraphs: [
+            "Climate change can make flooding more likely and more severe. As the air gets warmer, it can hold more water. This can lead to heavier rain falling in a shorter time. When too much rain falls quickly, drains and waterways may not be able to carry it away, causing water to build up in streets and low-lying areas. Warmer conditions can also give storms more energy and produce heavier rainfall. This means floods may happen more often, spread further and cause damage to homes, roads and services. Understanding this risk can help communities prepare and stay safer during severe weather.",
+          ],
+          source: {
+            url: "https://www.climatecouncil.org.au/resources/climate-change-floods/",
+          },
+        },
+      ],
     },
     demo_2010: {
       label: "2010 flood event (indicative)",
       file: "data/flood_extent_2010.json",
       badge: "Example only · not a record of the 2010 flood",
-      meaning: "“2010 flood event” refers to a flood in 2010. “Indicative” means a rough illustration, not an exact record of where the water reached.",
-      explanation: "The shaded area was made for this prototype. It does not show where flooding actually happened in 2010.",
       areaName: "demo flood area",
       kind: "synthetic_demo",
+      topics: [
+        {
+          id: "extent",
+          title: "What does 2010 flood extent represent?",
+          paragraphs: [
+            "The 2010 flood extent is an indicative map created for this website by trimming the larger 2100 flood extent. It provides a visual comparison showing how the mapped flood area could expand under projected climate conditions by 2100. However, it is not an official flood model, a verified boundary, or a record of where flooding occurred in 2010. Properties within the indicative area may not flood during every severe storm, while properties outside it may still be affected. The map should therefore be used only to support community awareness and discussion, not for property-specific assessment, planning, insurance, or emergency decisions.",
+          ],
+        },
+      ],
     },
   };
 
@@ -40,7 +77,7 @@
     let candidates = [];
     let generation = 0;
     let searching = false;
-    const expandedScenarios = new Set();
+    const expandedTopics = new Set();
 
     function element(tag, text, className) {
       const el = doc.createElement(tag);
@@ -127,27 +164,31 @@
         if (!messages[relation]) relation = "unavailable";
         const [heading, description] = messages[relation];
         card.appendChild(element("p", heading, `scenario-status ${relation}`));
-        const details = element("details", undefined, "scenario-details");
-        details.open = expandedScenarios.has(id);
-        details.addEventListener("toggle", () => {
-          if (details.open) expandedScenarios.add(id);
-          else expandedScenarios.delete(id);
-        });
-        details.appendChild(element("summary", "What does this label mean?"));
-        details.appendChild(element("p", layer.meaning, "scenario-description"));
-        details.appendChild(element("p", layer.explanation, "scenario-metadata"));
-        if (description) details.appendChild(element("p", description, "scenario-description"));
-        // Keep only the fixed terminology reference, never untrusted metadata URLs.
-        if (layer.definitionSource) {
-          const sources = element("div", undefined, "scenario-sources");
-          sources.appendChild(localLink("What 1% AEP means — Melbourne Water", layer.definitionSource));
-          details.appendChild(sources);
-        }
-        card.appendChild(details);
-        if (layer.climateSource) {
-          const reading = element("p", undefined, "scenario-sources");
-          reading.appendChild(localLink("How does climate change influence the flood risk?", layer.climateSource));
-          card.appendChild(reading);
+        // Result guidance stays visible; educational topics expand independently.
+        if (description) card.appendChild(element("p", description, "scenario-description"));
+        for (const topic of layer.topics) {
+          const key = `${id}:${topic.id}`;
+          const details = element("details", undefined, "scenario-details");
+          details.setAttribute("data-topic", topic.id);
+          details.open = expandedTopics.has(key);
+          details.addEventListener("toggle", () => {
+            // Ignore queued events from cards replaced by a later refresh.
+            if (!scenarios.contains(card)) return;
+            if (details.open) expandedTopics.add(key);
+            else expandedTopics.delete(key);
+          });
+          details.appendChild(element("summary", topic.title));
+          for (const paragraph of topic.paragraphs) {
+            details.appendChild(element("p", paragraph, "scenario-description"));
+          }
+          // Only use the supplied fixed links, never dataset-provided URLs.
+          if (topic.source) {
+            const sources = element("p", undefined, "scenario-sources");
+            sources.appendChild(element("span", "For detailed information, please visit:"));
+            sources.appendChild(localLink(topic.source.url, topic.source.url));
+            details.appendChild(sources);
+          }
+          card.appendChild(details);
         }
         if (!dataset.visible && ["inside", "boundary", "outside"].includes(relation)) {
           const actions = element("div", undefined, "scenario-actions");
@@ -161,7 +202,6 @@
         if (relation === "unavailable") hasFailedData = true;
       }
       node("address-retry-data").hidden = !hasFailedData;
-      node("address-snapshot").textContent = "This checks the map pin against both areas, even if you hide them. It cannot tell you whether a property will flood.";
     }
 
     function select(result) {
