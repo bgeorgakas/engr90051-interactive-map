@@ -3,29 +3,28 @@
   "use strict";
   const LAYERS = {
     legacy_2100: {
-      label: "2100 — 1% AEP (climate change)",
+      label: "Flood Extent 2100 — 1% AEP (climate change scenario)",
       file: "data/flood_extent_2100.json",
-      badge: "Planning map · not a prediction for 2100",
-      areaName: "displayed flood-planning area",
-      kind: "planning_overlay",
+      results: {
+        inside: ["This address has been identified as at risk of flooding", ""],
+        boundary: ["This address is on the edge of the area identified as at risk of flooding", ""],
+        outside: ["This address has not been identified as at risk of flooding", ""],
+      },
       topics: [
         {
           id: "aep",
           title: "What does 1% AEP mean?",
           paragraphs: [
-            "A 1% annual exceedance probability (AEP) means a flood of a particular size that has a 1% chance of occurring in any year.",
-            "You may hear this called a “1 in 100-year flood”, but it does not mean it happens only once every 100 years. These floods can occur close together, even in consecutive years. Therefore, a recent flood does not mean your area is safe from another.",
-            "Flood maps show areas that could be affected, but cannot tell you when flooding will happen. Knowing your risk, preparing a flood plan and following official warnings can help you stay safe.",
+            "1% AEP “refers to the probability or risk of a rainfall event of a given magnitude (intensity and duration) occurring or being exceeded in any given year. A 90% AEP event has a high probability of occurring or being exceeded; it would occur quite often and would be a relatively minor rainfall event. A 1% AEP event has a low probability of occurrence or being exceeded; it would be rare but it would be likely to cause extensive damage.” [3]",
           ],
-          source: {
-            url: "https://www.melbournewater.com.au/about/publications/news/what-1-100-year-flood-event",
-          },
+          // Cited by catalogue marker so the reference text is defined once (the Water Technology report).
+          references: ["[3]"],
         },
         {
           id: "extent",
           title: "What does 2100 flood extent represent?",
           paragraphs: [
-            "The 2100 flood extent shows areas that may be affected by a severe flood with a 1% chance of occurring in any year. It includes flooding associated with both Melbourne Water’s main drains and the City of Melbourne’s council drains, assuming rainfall intensity increases by 18.5% due to climate change by 2100. It is a planning scenario, not an exact prediction of future flooding.",
+            "The 2100 flood extent shows the area that may be subject to inundation from a 1% AEP flood event in the year 2100, taking into account the effects of climate change",
           ],
           source: {
             url: "https://participate.melbourne.vic.gov.au/amendment-c384",
@@ -35,35 +34,37 @@
           id: "climate",
           title: "How does climate change influence flooding?",
           paragraphs: [
-            "Climate change can make flooding more likely and more severe. As the air gets warmer, it can hold more water. This can lead to heavier rain falling in a shorter time. When too much rain falls quickly, drains and waterways may not be able to carry it away, causing water to build up in streets and low-lying areas. Warmer conditions can also give storms more energy and produce heavier rainfall. This means floods may happen more often, spread further and cause damage to homes, roads and services. Understanding this risk can help communities prepare and stay safer during severe weather.",
+            "Climate change increases the likelihood and severity of flooding due primarily to increased rainfall intensity and rising sea levels. The 2100 flood extent is based on a climate change scenario that assumes an 18.5% increase in rainfall intensity by the year 2100 [1].",
           ],
-          source: {
-            url: "https://www.climatecouncil.org.au/resources/climate-change-floods/",
-          },
+          references: ["[1]"],
         },
       ],
     },
     demo_2010: {
-      label: "2010 flood event (indicative)",
+      label: "Flood Extent 2010 (example only)",
       file: "data/flood_extent_2010.json",
-      badge: "Example only · not a record of the 2010 flood",
-      areaName: "demo flood area",
-      kind: "synthetic_demo",
-      topics: [
-        {
-          id: "extent",
-          title: "What does 2010 flood extent represent?",
-          paragraphs: [
-            "The 2010 flood extent is an indicative map created for this website by trimming the larger 2100 flood extent. It provides a visual comparison showing how the mapped flood area could expand under projected climate conditions by 2100. However, it is not an official flood model, a verified boundary, or a record of where flooding occurred in 2010. Properties within the indicative area may not flood during every severe storm, while properties outside it may still be affected. The map should therefore be used only to support community awareness and discussion, not for property-specific assessment, planning, insurance, or emergency decisions.",
-          ],
-        },
-      ],
+      // Example geometry: the "In this example layer" wording keeps results from reading as a 2010 record.
+      results: {
+        inside: ["In this example layer, this address falls within the 2010 flood extent", ""],
+        boundary: ["In this example layer, this address is on the edge of the 2010 flood extent", ""],
+        outside: ["In this example layer, this address falls outside the 2010 flood extent", ""],
+      },
+      // Explained by the card's "About this data" dropdown.
+      topics: [],
     },
+  };
+
+  const SHARED_RESULTS = {
+    out_of_area: ["This address is outside the area covered by this map", ""],
+    unavailable: ["Map data unavailable", "We could not check this location because the map data is missing or could not be read. This does not mean there is no flood risk."],
+    loading: ["Loading map data…", "Your result will appear when this part of the map finishes loading."],
   };
 
   function create(options) {
     const doc = options.document || root.document;
     const lookup = options.lookupPoint || root.AddressLookup.lookupPoint;
+    // Descriptions and references come from the fixed catalogue, not from loaded data.
+    const catalogue = options.catalogue || root.PrototypeData?.DATASETS || [];
     const node = (id) => doc.getElementById(id);
     const panel = node("address-panel");
     const input = node("address-search-input");
@@ -127,17 +128,68 @@
       return link;
     }
 
+    function safeLink(href) {
+      try {
+        const url = new URL(href);
+        return url.protocol === "https:" && !url.username && !url.password ? url.href : null;
+      } catch (_) { return null; }
+    }
+
+    function topicDetails(card, key, title) {
+      const details = element("details", undefined, "scenario-details");
+      details.open = expandedTopics.has(key);
+      details.addEventListener("toggle", () => {
+        // Ignore queued events from cards replaced by a later refresh.
+        if (!scenarios.contains(card)) return;
+        if (details.open) expandedTopics.add(key);
+        else expandedTopics.delete(key);
+      });
+      details.appendChild(element("summary", title));
+      return details;
+    }
+
+    function aboutDetails(card, id) {
+      const entry = catalogue.find((dataset) => dataset.id === id);
+      if (!entry?.description) return null;
+      const details = topicDetails(card, `${id}:about`, "About this data");
+      details.setAttribute("data-topic", "about");
+      details.appendChild(element("p", entry.description, "scenario-description"));
+      const list = referenceList(entry.references);
+      if (list) details.appendChild(list);
+      return details;
+    }
+
+    function referenceList(references = []) {
+      const list = element("ul", undefined, "scenario-references");
+      for (const reference of references) {
+        const href = safeLink(reference.url);
+        if (!href) continue;
+        const item = element("li", `${reference.marker} ${reference.text} `);
+        item.appendChild(localLink("Available here", href));
+        list.appendChild(item);
+      }
+      return list.children.length ? list : null;
+    }
+
+    function catalogueReferences(markers = []) {
+      const all = catalogue.flatMap((dataset) => dataset.references || []);
+      return markers.map((marker) => all.find((reference) => reference.marker === marker)).filter(Boolean);
+    }
+
+    // Outside the catchment there is no flood data to compare against. If the
+    // catchment is unavailable, fall back to the layer results alone.
+    function outsideMappedArea(point, catchment) {
+      if (catchment?.state !== "loaded" || !catchment.prepared) return false;
+      try { return lookup(point, catchment.prepared).relation === "outside"; } catch (_) { return false; }
+    }
+
     function refresh() {
       if (!selection || panel.hidden) return;
       const context = options.getData();
       const point = [selection.lon, selection.lat];
       node("selected-address").textContent = selection.label;
-      node("selected-coordinate").textContent = `Map pin: ${selection.lat.toFixed(5)}, ${selection.lon.toFixed(5)} (latitude, longitude)`;
-      const broadMatch = ["road", "street", "suburb", "neighbourhood", "quarter", "city", "town", "village", "municipality", "county", "state", "country", "postcode", "administrative"].includes(selection.kind);
-      node("address-precision-note").textContent = broadMatch
-        ? "This pin marks a street or area, not a specific property. Try adding a street number, and check that the pin is in the right place."
-        : "Check that the pin is in the right place. It marks an approximate location, not the whole property or its entrance.";
       scenarios.replaceChildren();
+      const outOfArea = outsideMappedArea(point, context.catchment);
       let hasFailedData = false;
       for (const id of Object.keys(LAYERS)) {
         const layer = LAYERS[id];
@@ -145,8 +197,6 @@
         const metadata = dataset.metadata;
         const card = element("section", undefined, "scenario-card");
         card.appendChild(element("h4", metadata?.label || layer.label));
-        // Keep provenance visible even while explanation details are collapsed.
-        card.appendChild(element("p", layer.badge, `scenario-data-kind ${layer.kind}`));
         let relation = dataset.state === "loading" ? "loading" : "unavailable";
         if (dataset.state === "loaded" && dataset.prepared) {
           try {
@@ -154,30 +204,16 @@
             relation = result.relation;
           } catch (_) { relation = "unavailable"; }
         }
-        const messages = {
-          inside: ["This address is within the flood prone area", ""],
-          boundary: [`This address is on the edge of the ${layer.areaName}`, "A small change in the pin location could change this result. Check that the pin matches your location."],
-          outside: [`This address is outside the ${layer.areaName}`, "Being outside this area does not mean the location is safe from flooding."],
-          unavailable: ["Map data unavailable", "We could not check this location because the map data is missing or could not be read. This does not mean there is no flood risk."],
-          loading: ["Loading map data…", "Your result will appear when this part of the map finishes loading."],
-        };
+        if (outOfArea && ["inside", "boundary", "outside"].includes(relation)) relation = "out_of_area";
+        const messages = { ...layer.results, ...SHARED_RESULTS };
         if (!messages[relation]) relation = "unavailable";
         const [heading, description] = messages[relation];
         card.appendChild(element("p", heading, `scenario-status ${relation}`));
         // Result guidance stays visible; educational topics expand independently.
         if (description) card.appendChild(element("p", description, "scenario-description"));
         for (const topic of layer.topics) {
-          const key = `${id}:${topic.id}`;
-          const details = element("details", undefined, "scenario-details");
+          const details = topicDetails(card, `${id}:${topic.id}`, topic.title);
           details.setAttribute("data-topic", topic.id);
-          details.open = expandedTopics.has(key);
-          details.addEventListener("toggle", () => {
-            // Ignore queued events from cards replaced by a later refresh.
-            if (!scenarios.contains(card)) return;
-            if (details.open) expandedTopics.add(key);
-            else expandedTopics.delete(key);
-          });
-          details.appendChild(element("summary", topic.title));
           for (const paragraph of topic.paragraphs) {
             details.appendChild(element("p", paragraph, "scenario-description"));
           }
@@ -188,8 +224,12 @@
             sources.appendChild(localLink(topic.source.url, topic.source.url));
             details.appendChild(sources);
           }
+          const references = referenceList(catalogueReferences(topic.references));
+          if (references) details.appendChild(references);
           card.appendChild(details);
         }
+        const about = aboutDetails(card, id);
+        if (about) card.appendChild(about);
         if (!dataset.visible && ["inside", "boundary", "outside"].includes(relation)) {
           const actions = element("div", undefined, "scenario-actions");
           const show = element("button", "Show layer on map");

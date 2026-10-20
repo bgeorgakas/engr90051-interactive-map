@@ -39,13 +39,11 @@
     </div>
     <section id="address-selection" hidden aria-labelledby="selected-address">
       <h3 id="selected-address" tabindex="-1"></h3>
-      <p id="selected-coordinate"></p>
-      <p id="address-precision-note" class="address-precision-note">Check that the pin is in the right place. It marks an approximate location, not the whole property or its entrance.</p>
       <div id="address-scenarios"></div>
       <button id="address-retry-data" type="button" hidden>Try loading the map data again</button>
       <details id="address-result-notes">
         <summary>Disclaimer</summary>
-        <p>This website and its interactive flood map are provided for general education and community awareness only. Flood extents are estimates and do not show exactly where or when flooding will occur. The “Indicative 2010 Flood Extent” was created for this website by trimming the 2100 extent because a separate current-climate council-drain layer was not publicly available. It is not an official, modelled or observed 2010 flood boundary. The 2100 extent is a planning scenario, not a forecast. Being outside a mapped area does not mean a property is flood-free. Do not use this website for property, planning, building, insurance or emergency decisions. Seek current advice from the City of Melbourne or Melbourne Water and follow VicEmergency warnings during an emergency. While care has been taken, we cannot guarantee that the information is complete, current or error-free.</p>
+        <p>This website and its interactive flood map are provided for general education and community awareness only. Flood extents are estimates and do not show exactly where or when flooding will occur. The “Flood Extent 2010 (example only)” was created for this website by trimming the 2100 extent because a separate current-climate council-drain layer was not publicly available. It is not an official, modelled or observed 2010 flood boundary. The 2100 extent is a planning scenario, not a forecast. Being outside a mapped area does not mean a property is flood-free. Do not use this website for property, planning, building, insurance or emergency decisions. Seek current advice from the City of Melbourne or Melbourne Water and follow VicEmergency warnings during an emergency. While care has been taken, we cannot guarantee that the information is complete, current or error-free.</p>
       </details>
       <div class="address-selection-actions">
         <button id="address-change-location" type="button">Choose another result</button>
@@ -54,36 +52,15 @@
     </section>
   </aside>
 
-  <aside id="dataset-panel" aria-label="Flood data and sources">
-    <h2>Map information</h2>
-    <p class="data-notice">“2010” is synthetic; “2100” uses planning boundaries, not a verified future model.</p>
-    <div id="layer-status" role="status" aria-live="polite">Loading prototype layers…</div>
+  <aside id="dataset-panel" aria-label="Data sources and limitations">
+    <!-- Load failures stay visible here; nothing else is shown unless something fails. -->
+    <div id="layer-status" role="status" aria-live="polite" hidden></div>
     <button id="retry-layer-data" type="button" hidden>Retry layer data</button>
     <p id="map-load-warning" role="status" aria-live="polite" hidden></p>
-    <div class="infrastructure-legend" aria-label="Infrastructure marker types">
-      <span><i class="infrastructure-storage"></i>Storage</span>
-      <span><i class="infrastructure-treepits"></i>Tree pits</span>
-      <span><i class="infrastructure-raingardens"></i>Raingardens</span>
-      <span><i class="infrastructure-paving"></i>Permeable paving</span>
-    </div>
-    <details id="map-content-details">
-      <summary>Explore infrastructure &amp; stories</summary>
-      <h3>Flood infrastructure</h3>
-      <p id="infrastructure-status" role="status">Loading infrastructure records…</p>
-      <ul id="infrastructure-list" class="map-content-list"></ul>
-      <h3>Historic flood stories</h3>
-      <p id="story-status" role="status">Loading historical records…</p>
-      <ul id="story-list" class="map-content-list"></ul>
-      <p>These educational markers are not live asset monitoring or property-level flood protection assessments.</p>
-    </details>
     <button id="retry-map-content" type="button" hidden>Retry infrastructure / stories</button>
     <details id="data-details">
       <summary>Data sources and limitations</summary>
       <div id="dataset-sources"></div>
-      <p>The original names are retained for the team's prototype. They are not verification of a year, historical event or 1% AEP probability.</p>
-      <p>These layers do not provide water depth, a risk rating or real-time conditions. Address lookup checks whether a single approximate point intersects these same prototype shapes.</p>
-      <p>Outside a shaded area does not mean safe. Differences between the prototype layers are not evidence of climate change or historical flooding.</p>
-      <p>The separate official baseline and 2100 snapshots remain archived in the repository but are not loaded or used by this page.</p>
     </details>
   </aside>
 
