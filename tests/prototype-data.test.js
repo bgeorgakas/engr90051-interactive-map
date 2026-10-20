@@ -30,8 +30,8 @@ test("catalogue retains only 2100 and 2010 in their intended order", () => {
   assert.equal(DATASETS.length, 2);
   assert.deepEqual(DATASETS.map(({ id, file, scenario, data_kind, synthetic }) => ({ id, file, scenario, data_kind, synthetic })), EXPECTED);
   assert.deepEqual(DATASETS.map((dataset) => dataset.label), [
-    "2100 — 1% AEP (climate change)",
-    "2010 flood event (indicative)",
+    "Flood Extent 2100 — 1% AEP (climate change scenario)",
+    "Flood Extent 2010 (example only)",
   ]);
   assert.equal(new Set(DATASETS.map((dataset) => dataset.id)).size, 2);
   assert.equal(new Set(DATASETS.map((dataset) => dataset.file)).size, 2);
@@ -48,10 +48,17 @@ test("catalogue and every metadata entry are immutable", () => {
 });
 
 test("legacy display labels are qualified with their real planning/synthetic provenance", () => {
-  assert.match(DATASETS[0].description, /SBO\/LSIO planning boundaries/i);
-  assert.match(DATASETS[0].description, /not a verified 2100 flood model/i);
-  assert.match(DATASETS[1].description, /Synthetic demonstration/i);
-  assert.match(DATASETS[1].description, /not observed or modelled 2010 flooding/i);
+  assert.match(DATASETS[0].description, /Special Building Overlay \(SBO2 and SBO3\)/);
+  assert.match(DATASETS[0].description, /18\.5% increase in rainfall intensity due to climate change by the year 2100\u201d \[1\]/);
+  assert.deepEqual(DATASETS[0].references.map(({ marker }) => marker), ["[1]", "[2]"]);
+  for (const { url } of DATASETS[0].references) assert.equal(new URL(url).protocol, "https:");
+  assert.equal(Object.isFrozen(DATASETS[0].references), true);
+  assert.deepEqual(DATASETS[1].references.map(({ marker }) => marker), ["[3]"]);
+  assert.equal(new URL(DATASETS[1].references[0].url).protocol, "https:");
+  assert.equal(Object.isFrozen(DATASETS[1].references), true);
+  assert.match(DATASETS[1].description, /placeholder dataset/i);
+  assert.match(DATASETS[1].description, /does not represent the actual 2010 flood extent/i);
+  assert.match(DATASETS[1].description, /C384 Planning Amendment \[3\]\.$/);
   for (const dataset of DATASETS) {
     assert.equal(dataset.source_url, "scripts/transform.py");
     assert.equal(fs.existsSync(path.join(ROOT, dataset.source_url)), true);

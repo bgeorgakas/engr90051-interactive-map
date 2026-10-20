@@ -15,17 +15,18 @@ basemap tiles, address search and linked historic media.
 
 ## Active prototype layers
 
-Both extent layers are on by default, drawn in this order. Catchment and historic
-stories remain available and on by default. `js/prototype-data.js` is the shared
+Only Flood Extent 2100 and the catchment boundary are shown by default. The 2010
+extent, infrastructure and historic stories load at startup but start unchecked
+in the layer control. Extent layers are drawn in this order. `js/prototype-data.js` is the shared
 catalogue for loading, validation, map controls and address-result metadata.
 
 | Original display name | File | Actual data |
 | --- | --- | --- |
-| 2100 — 1% AEP (climate change) | `data/flood_extent_2100.json` | Merged SBO/LSIO planning boundaries, not a verified 2100 model |
-| 2010 flood event (indicative) | `data/flood_extent_2010.json` | Synthetic shapes, not an observed or modelled 2010 flood |
+| Flood Extent 2100 — 1% AEP (climate change scenario) | `data/flood_extent_2100.json` | Merged SBO/LSIO planning boundaries, not a verified 2100 model |
+| Flood Extent 2010 (example only) | `data/flood_extent_2010.json` | Synthetic shapes, not an observed or modelled 2010 flood |
 
 The names are retained for continuity, not as evidence of a date, probability or
-event. Persistent notices and address-card badges explain these limitations.
+event. Layer descriptions and each address card's "About this data" dropdown explain these limitations.
 The 2010 demo shapes were made by reducing the planning area towards 85%, then
 restoring portions within random storm cells. The difference between the two
 layers is a design choice, not hydraulic or climate evidence.
@@ -127,20 +128,26 @@ The panel checks that one approximate geocoded point against **both active
 prototype layers**, regardless of which layers are visible. It distinguishes
 inside, on a polygon boundary, outside the displayed area, loading, and
 unavailable data. Holes and every small component are retained in the checks.
-Permanent badges identify planning and synthetic layers; an intersection is
-only a geometry match, never a real flood-risk result. Archived official model
+The 2100 card reports whether the point has or has not been identified as at
+risk of flooding. The 2010 card is worded as an example-layer result and states
+that it does not show whether the address flooded in 2010. An intersection is
+only a geometry match against these layers. Archived official model
 snapshots and the archived current-day layer are not loaded or used for address
 results. Infrastructure markers and story locations are not risk-assessment data.
 
-The catchment check describes the project's geographic scope, **not** the
-assessed flood coverage. These prototype shapes are not a flood assessment.
+If the catchment has loaded and the point is outside it, both cards say the
+address is outside the area covered by the map instead of giving a layer result.
+If the catchment is loading or unavailable, the layer results are shown alone.
+The catchment describes the project's geographic scope, **not** the assessed
+flood coverage. These prototype shapes are not a flood assessment.
 No intersection therefore does not prove the address was assessed,
 does not mean safe, and is not a property-level risk rating. Geocoded points
 can represent a street/place centre rather than a building or entrance; users
 must verify the pin. This is not an engineering or emergency assessment.
 
-Results show the original layer name, actual data type, its limitations and
-links to the local layer data and generation script. Failed loads can be retried; the
+Each card shows the layer name, the result, educational dropdowns and an
+"About this data" dropdown with the layer's description and references, taken
+from the fixed catalogue in `js/prototype-data.js`. Failed loads can be retried; the
 selected result updates once data arrives. Editing/closing/starting another
 search cancels stale requests and clears stale pins. The panel supports keyboard
 controls, candidate selection, map recentering and a mobile bottom-sheet layout.
@@ -181,10 +188,10 @@ node --test tests/*.test.js
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_fetch_official_flood_data.py' -v
 ```
 
-Manual checks: both retained extent layers on at startup, no current-day or separate
+Manual checks: only Flood Extent 2100 and the catchment checked at startup, no current-day or separate
 official baseline/future entries or network requests; toggle each retained layer;
 open a polygon's provenance popup; search/select a public place; check both
-prototype results and permanent type warnings; change/close a search; open a
+prototype results and the About this data dropdowns, plus an address outside the catchment; change/close a search; open a
 historic story and an infrastructure popup; check source/location notes and a
 narrow phone viewport. Loading failures must be visible
 with a retry button, not silently treated as an outside or safe result.

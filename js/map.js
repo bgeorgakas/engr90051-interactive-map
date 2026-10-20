@@ -114,17 +114,31 @@ function sourceLink(label, href) {
   return a;
 }
 
+// Only failures are listed, so the panel stays limited to sources and limitations.
 function updateLayerStatus() {
   layerStatus.replaceChildren();
   for (const { id, label } of prototypeDatasets) {
+    if (prototypeStates.get(id) !== "failed") continue;
     const line = document.createElement("p");
-    const state = prototypeStates.get(id) || "loading";
-    const layer = prototypeLayers.get(id);
-    line.textContent = `${label}: ${state === "loaded" ? (map.hasLayer(layer) ? "loaded · shown" : "loaded · hidden") : state === "failed" ? "failed to load — not evidence of no flooding" : "loading…"}`;
-    line.className = state === "failed" ? "data-error" : "data-state";
+    line.textContent = `${label}: failed to load — not evidence of no flooding`;
+    line.className = "data-error";
     layerStatus.appendChild(line);
   }
+  layerStatus.hidden = layerStatus.children.length === 0;
   addressPanel?.refresh();
+}
+
+// Fixed catalogue citations, numbered to match the [n] markers in the description.
+function referenceList(dataset) {
+  const list = document.createElement("ol");
+  list.className = "dataset-references";
+  (dataset.references || []).forEach(({ marker, text, url }) => {
+    const item = document.createElement("li");
+    item.appendChild(document.createTextNode(`${marker} ${text} `));
+    item.appendChild(sourceLink("Available here", url));
+    list.appendChild(item);
+  });
+  return list;
 }
 
 function renderSources() {
@@ -137,9 +151,7 @@ function renderSources() {
     const text = document.createElement("p");
     text.textContent = dataset.description;
     section.appendChild(text);
-    section.appendChild(sourceLink("Layer data", dataset.file));
-    section.appendChild(document.createTextNode(" · "));
-    section.appendChild(sourceLink("How this layer was made", dataset.source_url));
+    if (dataset.references?.length) section.appendChild(referenceList(dataset));
     datasetSources.appendChild(section);
   });
 }
@@ -152,7 +164,7 @@ function featureDetails(dataset) {
   const p = document.createElement("p");
   p.textContent = dataset.description;
   container.appendChild(p);
-  container.appendChild(sourceLink("How this layer was made", dataset.source_url));
+  if (dataset.references?.length) container.appendChild(referenceList(dataset));
   return container;
 }
 
@@ -187,7 +199,8 @@ async function loadPrototypeData() {
         prototypePrepared.set(dataset.id, prepared);
         prototypeStates.set(dataset.id, "loaded");
         syncPrototypeControls();
-        layer.addTo(map);
+        // Only Flood Extent 2100 starts visible; the others are opt-in from the layer control.
+        if (dataset.id === "legacy_2100") layer.addTo(map);
       } catch (err) {
         console.error(`Prototype layer ${dataset.id} failed`, err);
         prototypeStates.set(dataset.id, "failed");
@@ -241,6 +254,7 @@ function recenterAddress(result) {
 }
 
 addressPanel = AddressPanel.create({
+  catalogue: prototypeDatasets,
   searchClient: {
     cancel() { searchGeneration += 1; searchClient?.cancel(); },
     async search(query, options) {
@@ -418,7 +432,6 @@ map.on("popupclose", () => document.getElementById("map-layout").classList.remov
 async function loadFloodStories() {
   if (storiesLoaded || loadingContent.has("stories")) return;
   loadingContent.add("stories");
-  document.getElementById("story-status").textContent = "Loading historical records…";
   try {
     const stories = await FloodData.fetchJSON("data/flood_stories.json");
     if (!Array.isArray(stories) || stories.length === 0 || stories.some((story) => !story || typeof story.title !== "string" ||
@@ -430,8 +443,6 @@ async function loadFloodStories() {
       throw new Error("Invalid historical story locations");
     }
     const floodStoriesLayer = L.markerClusterGroup();
-    const list = document.getElementById("story-list");
-    list.replaceChildren();
     stories.forEach((story) => {
       floodStoriesLayer.addLayer(
         L.marker([story.lat, story.lng], { icon: story.video ? videoIcon : cameraIcon, title: story.title, alt: story.title }).on("click", () =>
@@ -439,28 +450,11 @@ async function loadFloodStories() {
         )
       );
     });
-    [...stories].sort((a, b) => a.year - b.year).forEach((story) => {
-      const li = document.createElement("li");
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = story.title;
-      button.addEventListener("click", () => {
-        if (!map.hasLayer(floodStoriesLayer)) floodStoriesLayer.addTo(map);
-        map.setView([story.lat, story.lng], 17);
-        openStoryPanel(story);
-      });
-      li.appendChild(button);
-      list.appendChild(li);
-    });
-    floodStoriesLayer.addTo(map);
     layerControl.addOverlay(floodStoriesLayer, "Historic flood stories");
     storiesLoaded = true;
-    const events = new Set(stories.map((story) => story.event_id || story.id));
-    document.getElementById("story-status").textContent = `${stories.length} records · ${events.size} historical events. Points are approximate story locations, not flood extents.`;
     clearLayerFailure("Historic flood stories");
   } catch (err) {
     console.error("Failed to load flood stories", err);
-    document.getElementById("story-status").textContent = "Historical records could not be loaded.";
     reportLayerFailure("Historic flood stories");
   } finally { loadingContent.delete("stories"); }
 }
@@ -483,8 +477,6 @@ function facilityIcon(category) {
 async function loadInfrastructure() {
   if (infrastructureLoaded || loadingContent.has("infrastructure")) return;
   loadingContent.add("infrastructure");
-  const status = document.getElementById("infrastructure-status");
-  status.textContent = "Loading infrastructure records…";
   try {
     const collection = Infrastructure.validateCollection(await FloodData.fetchJSON("data/infrastructure.geojson"));
     const group = L.markerClusterGroup({
@@ -497,8 +489,6 @@ async function loadInfrastructure() {
         return L.divIcon({ className: "infrastructure-cluster", html: `<span>${cluster.getChildCount()}</span>`, iconSize: [38, 38] });
       },
     });
-    const list = document.getElementById("infrastructure-list");
-    list.replaceChildren();
     collection.features.forEach((feature) => {
       const category = Infrastructure.getCategory(feature.properties.type);
       const [lon, lat] = feature.geometry.coordinates;
@@ -520,28 +510,12 @@ async function loadInfrastructure() {
         if (container) container.scrollTop = scrollTop;
       });
       group.addLayer(marker);
-      const li = document.createElement("li");
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = feature.properties.name;
-      button.addEventListener("click", () => {
-        if (!document.getElementById("address-panel").hidden) addressPanel?.close();
-        closeStoryPanel();
-        if (!map.hasLayer(group)) group.addTo(map);
-        map.setView([lat, lon], 18, { animate: false });
-        group.zoomToShowLayer(marker, () => marker.openPopup());
-      });
-      li.appendChild(button);
-      list.appendChild(li);
     });
-    group.addTo(map);
     layerControl.addOverlay(group, "Flood infrastructure (WSUD)");
     infrastructureLoaded = true;
-    status.textContent = `${collection.features.length} asset / project markers. Some locations are approximate; open a marker for its source and limitations.`;
     clearLayerFailure("Flood infrastructure");
   } catch (err) {
     console.error("Failed to load flood infrastructure", err);
-    status.textContent = "Infrastructure records could not be loaded.";
     reportLayerFailure("Flood infrastructure");
   } finally { loadingContent.delete("infrastructure"); }
 }

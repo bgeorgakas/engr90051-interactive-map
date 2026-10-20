@@ -17,12 +17,14 @@ const STORIES = "data/flood_stories.json";
 const INFRASTRUCTURE_DATA = JSON.parse(fs.readFileSync(path.join(ROOT, INFRASTRUCTURE), "utf8"));
 const STORY_DATA = JSON.parse(fs.readFileSync(path.join(ROOT, STORIES), "utf8"));
 const CATALOG = [
-  { id: "legacy_2100", file: LEGACY_2100, label: "2100 — 1% AEP (climate change)", data_kind: "planning_overlay", synthetic: false, scenario: "planning_overlay_union" },
-  { id: "demo_2010", file: DEMO_2010, label: "2010 flood event (indicative)", data_kind: "synthetic_demo", synthetic: true, scenario: "synthetic_demo_2010" },
+  { id: "legacy_2100", file: LEGACY_2100, label: "Flood Extent 2100 — 1% AEP (climate change scenario)", data_kind: "planning_overlay", synthetic: false, scenario: "planning_overlay_union" },
+  { id: "demo_2010", file: DEMO_2010, label: "Flood Extent 2010 (example only)", data_kind: "synthetic_demo", synthetic: true, scenario: "synthetic_demo_2010" },
 ];
 const SEARCH_CONFIG = "data/search-config.json";
 const GEOCODER = "https://nominatim.openstreetmap.org/search";
 const clone = (value) => structuredClone(value);
+// Educational topic dropdowns, excluding the per-card "About this data" dropdown.
+const isTopic = (details) => details.getAttribute("data-topic") !== "about";
 
 function extent(metadata, [west, south, east, north] = [144.96, -37.81, 144.97, -37.80]) {
   return {
@@ -120,7 +122,7 @@ function harness(overrides = {}) {
   const nodes = new Map();
   const document = { activeElement: null };
   const initiallyHidden = new Set([
-    "map-load-warning", "retry-layer-data", "address-panel", "address-candidates",
+    "layer-status", "map-load-warning", "retry-layer-data", "address-panel", "address-candidates",
     "address-selection", "address-retry-data", "retry-map-content", "story-panel", "story-image-notice",
   ]);
   const element = (id) => {
@@ -243,6 +245,8 @@ function harness(overrides = {}) {
     geocoderRequests() { return requestDetails.filter(({ url }) => url.startsWith(`${GEOCODER}?`)); },
     submit(query) { element("address-search-input").value = query; return element("address-search").dispatch("submit"); },
     choose(index = 0) { return element("address-candidate-list").children[index].querySelector("button").dispatch("click"); },
+    storyMarker(title) { return this.overlay("Historic flood stories").children.find((marker) => marker.options.title === title); },
+    openStory(title) { this.storyMarker(title).events.get("click")(); },
     scenarioStatuses() { return element("address-scenarios").querySelectorAll(".scenario-status"); },
     advanceClock(milliseconds) { nowMs += milliseconds; },
   };
@@ -250,21 +254,28 @@ function harness(overrides = {}) {
 
 test("startup loads only the retained 2100 and 2010 flood layers in catalog order", async () => {
   const h = harness();
-  assert.match(h.element("layer-status").textContent, /loading/i);
+  assert.equal(h.element("layer-status").hidden, true);
   assert.equal(h.element("retry-layer-data").hidden, true);
   await h.settle();
+  assert.equal(h.element("layer-status").hidden, true, "Successful loads add nothing to the sources panel");
+  assert.equal(h.element("layer-status").children.length, 0);
   const catalog = JSON.parse(h.evaluate("JSON.stringify(PrototypeData.DATASETS.map(({ id, label, file }) => ({ id, label, file })))"));
   assert.deepEqual(catalog, CATALOG.map(({ id, label, file }) => ({ id, label, file })));
   const displayed = h.control.overlays.filter(({ name }) => CATALOG.some((dataset) => dataset.label === name));
   assert.deepEqual(displayed.map(({ name }) => name), CATALOG.map(({ label }) => label));
   for (const dataset of CATALOG) {
     assert.equal(h.state(dataset.id), "loaded");
-    assert.equal(h.map.hasLayer(h.layer(dataset.id)), true);
+    assert.equal(h.map.hasLayer(h.layer(dataset.id)), dataset.id === "legacy_2100", "Only Flood Extent 2100 starts visible");
     assert.equal(h.countRequests(dataset.file), 1);
     assert.notEqual(h.layer(dataset.id).options.style.fill, false);
   }
   assert.deepEqual(CATALOG.map(({ id }) => h.layer(id).options.style.fillColor), ["#7dd3fc", "#a78bfa"]);
   assert.deepEqual(CATALOG.map(({ id }) => h.layer(id).options.style.fillOpacity), [0.35, 0.4]);
+  assert.equal(h.map.hasLayer(h.overlay("Elizabeth Street catchment")), true, "The catchment boundary starts visible");
+  for (const name of ["Flood infrastructure (WSUD)", "Historic flood stories"]) {
+    assert.ok(h.overlay(name), `${name} is still offered in the layer control`);
+    assert.equal(h.map.hasLayer(h.overlay(name)), false, `${name} starts unchecked`);
+  }
   assert.equal(h.countRequests(DEMO_CURRENT), 0);
   assert.equal(h.state("demo_current"), undefined);
   assert.equal(h.control.overlays.some(({ name }) => /Current day/.test(name)), false);
@@ -278,10 +289,12 @@ test("a failed prototype layer does not prevent the other retained layer loading
   await h.settle();
   assert.equal(h.state("legacy_2100"), "failed");
   assert.equal(h.state("demo_2010"), "loaded");
-  assert.equal(h.map.hasLayer(h.layer("demo_2010")), true);
+  assert.ok(h.layer("demo_2010"));
   assert.equal(h.countRequests(DEMO_CURRENT), 0);
   assert.equal(h.element("retry-layer-data").hidden, false);
+  assert.equal(h.element("layer-status").hidden, false);
   assert.match(h.element("layer-status").textContent, /not evidence of no flooding|does not mean no flooding/);
+  assert.doesNotMatch(h.element("layer-status").textContent, /Flood Extent 2010/, "Only failed layers are listed");
 });
 
 test("layer retry preserves loaded geometries without duplicate requests or controls", async () => {
@@ -296,8 +309,9 @@ test("layer retry preserves loaded geometries without duplicate requests or cont
   assert.strictEqual(h.layer("legacy_2100"), planning);
   assert.equal(h.map.hasLayer(planning), false, "Retry must not re-enable a layer the user hid");
   assert.equal(h.state("demo_2010"), "loaded");
-  assert.equal(h.map.hasLayer(h.layer("demo_2010")), true);
+  assert.equal(h.map.hasLayer(h.layer("demo_2010")), false, "A retried layer keeps its unchecked default");
   assert.equal(h.element("retry-layer-data").hidden, true);
+  assert.equal(h.element("layer-status").hidden, true);
   assert.equal(h.countRequests(LEGACY_2100), 1);
   assert.equal(h.countRequests(DEMO_2010), 2);
   assert.equal(h.countRequests(DEMO_CURRENT), 0);
@@ -361,7 +375,7 @@ test("malformed prototype JSON fails visibly without being treated as an empty v
   await h.settle();
   assert.equal(h.state("demo_2010"), "failed");
   assert.equal(h.element("retry-layer-data").hidden, false);
-  assert.match(h.element("layer-status").textContent, /2010 flood event.*failed/);
+  assert.match(h.element("layer-status").textContent, /Flood Extent 2010.*failed/);
 });
 
 test("overlapping retries while a prototype layer is loading do not duplicate requests", async () => {
@@ -393,17 +407,6 @@ test("catalog order stays stable when prototype files respond in reverse order",
   assert.deepEqual(h.element("address-scenarios").children.map((card) => card.querySelector("h4").textContent), CATALOG.map(({ label }) => label));
 });
 
-test("shown and hidden prototype status follows layer control events", async () => {
-  const h = harness();
-  await h.settle();
-  h.map.removeLayer(h.layer("demo_2010"));
-  h.map.fire("overlayremove");
-  assert.match(h.element("layer-status").textContent, /2010 flood event \(indicative\): loaded · hidden/);
-  h.layer("demo_2010").addTo(h.map);
-  h.map.fire("overlayadd");
-  assert.match(h.element("layer-status").textContent, /2010 flood event \(indicative\): loaded · shown/);
-});
-
 test("catchment failure retains a fallback map view and does not hide prototype data", async () => {
   const h = harness({ "data/catchment.json": () => httpError() });
   await h.settle();
@@ -422,15 +425,13 @@ test("historic-story failure is separate from successful prototype loading", asy
   assert.match(h.element("map-load-warning").textContent, /Historic flood stories/);
 });
 
-test("infrastructure loads eight sourced markers under a separate toggle and visible list", async () => {
+test("infrastructure loads eight sourced markers under a separate toggle", async () => {
   const h = harness();
   await h.settle();
   const group = h.overlay("Flood infrastructure (WSUD)");
   assert.ok(group);
   assert.equal(group.getChildCount(), 8);
-  assert.equal(h.map.hasLayer(group), true);
-  assert.equal(h.element("infrastructure-list").children.length, 8);
-  assert.match(h.element("infrastructure-status").textContent, /8 asset \/ project markers.*approximate/);
+  assert.equal(h.map.hasLayer(group), false, "Infrastructure starts unchecked");
   assert.equal(h.countRequests(INFRASTRUCTURE), 1);
   assert.equal(h.control.overlays.filter(({ name }) => name === "Flood infrastructure (WSUD)").length, 1);
   assert.deepEqual(group.children.map((marker) => marker.options.title), INFRASTRUCTURE_DATA.features.map(({ properties }) => properties.name));
@@ -439,12 +440,7 @@ test("infrastructure loads eight sourced markers under a separate toggle and vis
     assert.deepEqual(group.children[index].data, [lat, lon]);
     assert.equal(group.children[index].options.icon.className, "infrastructure-marker");
   });
-  const [first] = group.children;
-  h.map.removeLayer(group);
-  h.element("infrastructure-list").children[0].querySelector("button").dispatch("click");
-  assert.equal(h.map.hasLayer(group), true);
-  assert.equal(group.zoomedTo, first);
-  assert.equal(first.popupOpened, true);
+  group.children[0].events.get("click")();
   assert.equal(h.markers.length, 0, "Infrastructure selection must not create an address-risk marker");
   assert.equal(h.scenarioStatuses().length, 0);
 });
@@ -480,7 +476,7 @@ test("infrastructure popups distinguish three asset records from five approximat
   assert.equal(approximate, 5);
 });
 
-test("infrastructure clusters and list selection avoid animation-driven mobile popup removal", async () => {
+test("infrastructure clusters avoid animation-driven mobile popup removal", async () => {
   const h = harness();
   h.map.size = { x: 320, y: 480 };
   await h.settle();
@@ -494,9 +490,6 @@ test("infrastructure clusters and list selection avoid animation-driven mobile p
   assert.equal(marker.popupOptions.maxHeight, 340);
   assert.deepEqual(Array.from(marker.popupOptions.autoPanPaddingTopLeft), [15, 80]);
   assert.deepEqual(Array.from(marker.popupOptions.autoPanPaddingBottomRight), [15, 15]);
-  h.element("infrastructure-list").querySelector("button").dispatch("click");
-  assert.equal(h.map.viewOptions.at(-1).animate, false);
-  assert.equal(marker.popupOpened, true);
 });
 
 test("infrastructure popup events set layout state and focus content without scrolling", async () => {
@@ -543,7 +536,6 @@ for (const [name, responder] of [
     await h.settle();
     assert.equal(h.overlay("Flood infrastructure (WSUD)"), undefined);
     assert.equal(h.allMarkers.filter((marker) => marker.options.icon?.className === "infrastructure-marker").length, 0);
-    assert.equal(h.element("infrastructure-list").children.length, 0);
     assert.match(h.element("map-load-warning").textContent, /Flood infrastructure/);
     assert.equal(h.element("retry-map-content").hidden, false);
     for (const { id } of CATALOG) assert.equal(h.state(id), "loaded");
@@ -553,7 +545,6 @@ for (const [name, responder] of [
     await h.settle();
     const group = h.overlay("Flood infrastructure (WSUD)");
     assert.equal(group.getChildCount(), 8);
-    assert.equal(h.element("infrastructure-list").children.length, 8);
     assert.equal(h.element("retry-map-content").hidden, true);
     assert.equal(h.element("map-load-warning").hidden, true);
     assert.equal(h.countRequests(INFRASTRUCTURE), 2);
@@ -579,17 +570,13 @@ test("overlapping content retries do not duplicate in-flight infrastructure requ
   assert.equal(h.control.overlays.filter(({ name }) => name === "Flood infrastructure (WSUD)").length, 1);
 });
 
-test("historical stories show five records for four events with chronological list and source notes", async () => {
+test("historical stories show five markers and open source notes from a marker", async () => {
   const h = harness();
   await h.settle();
   const group = h.overlay("Historic flood stories");
   assert.equal(group.getChildCount(), 5);
-  assert.match(h.element("story-status").textContent, /5 records · 4 historical events.*not flood extents/);
-  const buttons = h.element("story-list").querySelectorAll("button");
-  assert.deepEqual(buttons.map((button) => button.textContent), [...STORY_DATA].sort((a, b) => a.year - b.year).map((story) => story.title));
-  h.map.removeLayer(group);
-  buttons.at(-1).dispatch("click");
-  assert.equal(h.map.hasLayer(group), true);
+  assert.deepEqual(group.children.map((marker) => marker.options.title), STORY_DATA.map((story) => story.title));
+  h.openStory(STORY_DATA.find((story) => story.year === 2010).title);
   assert.equal(h.element("story-panel").hidden, false);
   assert.match(h.element("story-panel-title").textContent, /6 March 2010/);
   assert.match(h.element("story-panel-description").textContent, /does not establish the flood depth or risk at an individual address/);
@@ -605,8 +592,7 @@ test("archive story media failures preserve readable text, credit and original s
   const h = harness();
   await h.settle();
   const archive = STORY_DATA.find((story) => story.year === 1862);
-  const button = h.element("story-list").querySelectorAll("button").find((node) => node.textContent === archive.title);
-  button.dispatch("click");
+  h.openStory(archive.title);
   const image = h.element("story-panel-image");
   assert.equal(image.src, new URL(archive.image).href);
   image.dispatch("error");
@@ -622,12 +608,11 @@ test("archive story media failures preserve readable text, credit and original s
 test("story images use descriptive alt text and fall back to the legacy title", async () => {
   const h = harness();
   await h.settle();
-  const buttons = h.element("story-list").querySelectorAll("button");
   const archive = STORY_DATA.find((story) => story.year === 1862);
-  buttons.find((button) => button.textContent === archive.title).dispatch("click");
+  h.openStory(archive.title);
   assert.equal(h.element("story-panel-image").alt, archive.image_alt);
   const legacy = STORY_DATA.find((story) => story.id === "1972-elizabeth-street");
-  buttons.find((button) => button.textContent === legacy.title).dispatch("click");
+  h.openStory(legacy.title);
   assert.equal(h.element("story-panel-image").alt, legacy.title);
 });
 
@@ -635,8 +620,7 @@ test("story provenance includes source attribution, rights, checked date and coo
   const h = harness();
   await h.settle();
   const archive = STORY_DATA.find((story) => story.year === 1882);
-  const buttons = h.element("story-list").querySelectorAll("button");
-  buttons.find((button) => button.textContent === archive.title).dispatch("click");
+  h.openStory(archive.title);
   const provenance = h.element("story-provenance-content");
   assert.ok(provenance.textContent.includes(archive.coordinate_attribution));
   assert.ok(provenance.textContent.includes(archive.media_rights_note));
@@ -650,7 +634,7 @@ test("story provenance includes source attribution, rights, checked date and coo
   assert.equal(h.element("story-provenance").open, false);
   h.element("story-provenance").open = true;
   const legacy = STORY_DATA.find((story) => story.id === "1972-elizabeth-street");
-  buttons.find((button) => button.textContent === legacy.title).dispatch("click");
+  h.openStory(legacy.title);
   assert.equal(h.element("story-provenance").open, false, "A newly opened story starts with collapsed source details");
   assert.equal(provenance.textContent, legacy.media_rights_note);
   assert.equal(provenance.querySelectorAll("a").length, 0);
@@ -664,7 +648,7 @@ test("unsafe optional coordinate URLs cannot become story provenance links", asy
   archive.coordinate_license_url = "https://user:password@example.test/licence";
   const h = harness({ [STORIES]: () => ok(stories) });
   await h.settle();
-  h.element("story-list").querySelectorAll("button").find((button) => button.textContent === archive.title).dispatch("click");
+  h.openStory(archive.title);
   assert.equal(h.element("story-provenance-content").querySelectorAll("a").length, 0);
   assert.ok(h.element("story-provenance-content").textContent.includes(archive.coordinate_attribution));
   assert.ok(h.element("story-panel-links").querySelectorAll("a").length > 0);
@@ -694,9 +678,7 @@ for (const [name, mutate] of [
     const h = harness({ [STORIES]: () => ok(broken) });
     await h.settle();
     assert.equal(h.overlay("Historic flood stories"), undefined);
-    assert.equal(h.element("story-list").children.length, 0);
     assert.equal(h.allMarkers.filter((marker) => marker.options.icon?.className === "flood-marker").length, 0);
-    assert.match(h.element("story-status").textContent, /could not be loaded/);
     assert.match(h.element("map-load-warning").textContent, /Historic flood stories/);
     assert.equal(h.element("retry-map-content").hidden, false);
     assert.equal(h.overlay("Flood infrastructure (WSUD)").getChildCount(), 8);
@@ -710,7 +692,6 @@ test("malformed story locations fail atomically while infrastructure remains ava
   const h = harness({ [STORIES]: () => ok(broken) });
   await h.settle();
   assert.equal(h.overlay("Historic flood stories"), undefined);
-  assert.equal(h.element("story-list").children.length, 0);
   assert.equal(h.overlay("Flood infrastructure (WSUD)").getChildCount(), 8);
   assert.equal(h.element("retry-map-content").hidden, false);
   h.routes.set(STORIES, () => ok(STORY_DATA));
@@ -732,8 +713,33 @@ test("source explanations distinguish planning boundaries from synthetic demo da
   const content = h.element("dataset-sources").textContent;
   for (const { label } of CATALOG) assert.ok(content.includes(label));
   assert.match(content, /planning/i);
-  assert.match(content, /synthetic/i);
+  assert.match(content, /placeholder/i);
   assert.doesNotMatch(content, /Official baseline|2017-08-31|2020-08-13/);
+  const references = h.element("dataset-sources").querySelectorAll(".dataset-references").flatMap((list) => list.querySelectorAll("li"));
+  assert.equal(references.length, 3);
+  assert.match(references[0].textContent, /^\[1\] .*Schedule 3 to Clause 44\.05 Special Building Overlay.*Available here$/);
+  assert.match(references[1].textContent, /^\[2\] Digital Twin Victoria.*Available here$/);
+  assert.match(references[2].textContent, /^\[3\] L\. Cunningham and C\. Marchenay, .*Flood Modelling Report.*Aug\. 2017.*Available here$/);
+  for (const link of references.map((item) => item.querySelector("a"))) {
+    assert.match(link.href, /^https:\/\//);
+    assert.equal(link.rel, "noopener noreferrer");
+  }
+});
+
+test("polygon popups repeat each cited description and its references", async () => {
+  const h = harness();
+  await h.settle();
+  const planning = h.evaluate("featureDetails(PrototypeData.DATASETS[0])");
+  assert.match(planning.textContent, /Special Building Overlay \(SBO2 and SBO3\).*\[1\].*\[2\]/);
+  const links = planning.querySelector(".dataset-references").querySelectorAll("a");
+  assert.equal(links.length, 2);
+  assert.match(links[0].href, /^https:\/\/stfpbsprodapp01\.blob\.core\.windows\.net\//);
+  assert.match(links[1].href, /^https:\/\/digitaltwin\.vic\.gov\.au\//);
+  const demo = h.evaluate("featureDetails(PrototypeData.DATASETS[1])");
+  assert.match(demo.textContent, /placeholder dataset.*\[3\]/);
+  const demoLinks = demo.querySelector(".dataset-references").querySelectorAll("a");
+  assert.equal(demoLinks.length, 1);
+  assert.match(demoLinks[0].href, /Technical%20Report%2004/);
 });
 
 test("address submit requires explicit selection before checking the same two displayed geometries", async () => {
@@ -763,7 +769,6 @@ test("address submit requires explicit selection before checking the same two di
   assert.equal(h.element("address-candidates").hidden, true);
   assert.equal(h.element("address-selection").hidden, false);
   assert.equal(h.element("selected-address").textContent, "Public test place, Melbourne");
-  assert.match(h.element("selected-coordinate").textContent, /-37\.80500, 144\.96500/);
   assert.strictEqual(h.document.activeElement, h.element("selected-address"));
   assert.deepEqual(h.markers[0].data, [-37.805, 144.965]);
   assert.equal(h.map.hasLayer(h.markers[0]), true);
@@ -771,10 +776,9 @@ test("address submit requires explicit selection before checking the same two di
   assert.deepEqual(h.map.pans.at(-1), [195, 0]);
   assert.deepEqual(h.scenarioStatuses().map((node) => node.className), Array(2).fill("scenario-status inside"));
   const content = h.element("address-scenarios").textContent;
-  assert.match(content, /Planning map · not a prediction for 2100/);
-  assert.match(content, /Example only · not a record of the 2010 flood/);
-  assert.equal(h.element("address-scenarios").children[0].querySelectorAll("details").length, 3);
-  assert.equal(h.element("address-scenarios").children[1].querySelectorAll("details").length, 1);
+  assert.doesNotMatch(content, /Planning map · not a prediction for 2100|Example only · not a record of the 2010 flood/);
+  assert.equal(h.element("address-scenarios").children[0].querySelectorAll("details").filter(isTopic).length, 3);
+  assert.equal(h.element("address-scenarios").children[1].querySelectorAll("details").filter(isTopic).length, 0);
   assert.doesNotMatch(content, /Current day/);
   for (const dataset of CATALOG) {
     assert.equal(h.countRequests(dataset.file), 1);
@@ -820,7 +824,7 @@ test("address layer-data retry refreshes the selected result without a new searc
   assert.equal(h.geocoderRequests().length, 1);
   assert.equal(h.markers.length, 1);
   assert.equal(h.map.hasLayer(pin), true);
-  assert.equal(h.map.hasLayer(h.layer("demo_2010")), true);
+  assert.equal(h.map.hasLayer(h.layer("demo_2010")), false);
 });
 
 test("a selected point updates automatically when pending prototype data finishes loading", async () => {
@@ -849,22 +853,25 @@ test("address HTML has the new Disclaimer and omits removed snapshot, catchment,
   assert.match(disclaimer, /<summary>Disclaimer<\/summary>/);
   // Verify the requested editorial copy verbatim; this is not a data-validity claim.
   const disclaimerParagraphs = [...disclaimer.matchAll(/<p>([\s\S]*?)<\/p>/g)].map((match) => match[1]);
-  assert.deepEqual(disclaimerParagraphs, ["This website and its interactive flood map are provided for general education and community awareness only. Flood extents are estimates and do not show exactly where or when flooding will occur. The “Indicative 2010 Flood Extent” was created for this website by trimming the 2100 extent because a separate current-climate council-drain layer was not publicly available. It is not an official, modelled or observed 2010 flood boundary. The 2100 extent is a planning scenario, not a forecast. Being outside a mapped area does not mean a property is flood-free. Do not use this website for property, planning, building, insurance or emergency decisions. Seek current advice from the City of Melbourne or Melbourne Water and follow VicEmergency warnings during an emergency. While care has been taken, we cannot guarantee that the information is complete, current or error-free."]);
+  assert.deepEqual(disclaimerParagraphs, ["This website and its interactive flood map are provided for general education and community awareness only. Flood extents are estimates and do not show exactly where or when flooding will occur. The “Flood Extent 2010 (example only)” was created for this website by trimming the 2100 extent because a separate current-climate council-drain layer was not publicly available. It is not an official, modelled or observed 2010 flood boundary. The 2100 extent is a planning scenario, not a forecast. Being outside a mapped area does not mean a property is flood-free. Do not use this website for property, planning, building, insurance or emergency decisions. Seek current advice from the City of Melbourne or Melbourne Water and follow VicEmergency warnings during an emergency. While care has been taken, we cannot guarantee that the information is complete, current or error-free."]);
   const css = fs.readFileSync(path.join(ROOT, "css/style.css"), "utf8");
   assert.match(css, /#address-search-status:empty\s*\{\s*display:\s*none;\s*\}/);
   const h = harness();
   h.stubGeocoder([geocoded()]);
   await h.settle();
+  // With both layers visible, neither card needs a "Show layer on map" button.
+  h.layer("demo_2010").addTo(h.map);
   await h.submit("Public test place Melbourne");
   h.choose();
   assert.equal(h.element("address-search-status").textContent, "");
   for (const [index, card] of h.element("address-scenarios").children.entries()) {
-    assert.equal(card.querySelector(".scenario-status").textContent, "This address is within the flood prone area");
+    assert.equal(card.querySelector(".scenario-status").textContent, ["This address has been identified as at risk of flooding", "In this example layer, this address falls within the 2010 flood extent"][index]);
     assert.equal(card.querySelector("button"), null);
     assert.equal(card.querySelector(".scenario-actions"), null);
-    assert.equal(card.querySelectorAll("a").length, index === 0 ? 3 : 0);
-    assert.equal(card.querySelectorAll("details").length, index === 0 ? 3 : 1);
-    assert.ok(card.querySelectorAll("details").every((details) => details.open === false));
+    assert.equal(card.querySelectorAll("details").filter(isTopic).flatMap((details) => details.querySelectorAll("a")).length, index === 0 ? 3 : 0);
+    assert.equal(card.querySelectorAll("details").filter((details) => !isTopic(details)).length, 1, "One About this data dropdown");
+    assert.equal(card.querySelectorAll("details").filter(isTopic).length, index === 0 ? 3 : 0);
+    assert.ok(card.querySelectorAll("details").filter(isTopic).every((details) => details.open === false));
     assert.equal(card.children.some((child) => child.className === "scenario-sources"), false);
     assert.doesNotMatch(card.textContent, /What does this label mean\?|How does climate change influence the flood risk\?/);
     assert.doesNotMatch(card.textContent, /Map data|How this area was created|Layer shown on map/);
@@ -877,7 +884,8 @@ test("educational dropdowns survive real map visibility refreshes and ignore obs
   await h.settle();
   await h.submit("Public test place Melbourne");
   h.choose();
-  const topics = (index) => h.element("address-scenarios").children[index].querySelectorAll("details");
+  // Card 1's only dropdown is About this data.
+  const topics = (index) => h.element("address-scenarios").children[index].querySelectorAll("details").filter((details) => index === 1 || isTopic(details));
   const before = topics(0);
   before[2].open = true;
   before[2].dispatch("toggle");
@@ -894,12 +902,12 @@ test("educational dropdowns survive real map visibility refreshes and ignore obs
   assert.equal(h.map.hasLayer(h.layer("legacy_2100")), true);
   assert.deepEqual(topics(0).map((topic) => topic.open), [false, false, true]);
   assert.equal(topics(1)[0].open, true);
-  assert.deepEqual(h.scenarioStatuses().map((node) => node.textContent), Array(2).fill("This address is within the flood prone area"));
+  assert.deepEqual(h.scenarioStatuses().map((node) => node.textContent), ["This address has been identified as at risk of flooding", "In this example layer, this address falls within the 2010 flood extent"]);
   assert.equal(h.geocoderRequests().length, 1);
   assert.equal(h.countRequests(LEGACY_2100), 1);
 });
 
-test("the map catchment remains loaded without an address catchment result", async () => {
+test("an address outside the loaded map catchment is reported as not covered", async () => {
   const catchment = extent({ ...CATALOG[0], id: "catchment" }, [144.96, -37.81, 144.963, -37.80]);
   const h = harness({ "data/catchment.json": () => ok(catchment) });
   h.stubGeocoder([geocoded()]);
@@ -908,7 +916,8 @@ test("the map catchment remains loaded without an address catchment result", asy
   h.choose();
   assert.equal(h.countRequests("data/catchment.json"), 1);
   assert.equal(h.control.overlays.some(({ name }) => /Elizabeth Street catchment/.test(name)), true);
-  assert.deepEqual(h.scenarioStatuses().map((node) => node.className), Array(2).fill("scenario-status inside"));
+  assert.deepEqual(h.scenarioStatuses().map((node) => node.className), Array(2).fill("scenario-status out_of_area"));
+  assert.deepEqual(h.scenarioStatuses().map((node) => node.textContent), Array(2).fill("This address is outside the area covered by this map"));
 });
 
 test("outside prototype extents within the catchment does not claim safety or official assessment coverage", async () => {
@@ -922,8 +931,11 @@ test("outside prototype extents within the catchment does not claim safety or of
   await h.submit("Public test place Melbourne");
   h.choose();
   assert.deepEqual(h.scenarioStatuses().map((node) => node.className), Array(2).fill("scenario-status outside"));
-  for (const card of h.element("address-scenarios").children) {
-    assert.match(card.textContent, /Being outside this area does not mean the location is safe from flooding/);
+  const [planningCard, demoCard] = h.element("address-scenarios").children;
+  assert.match(planningCard.textContent, /This address has not been identified as at risk of flooding/);
+  assert.match(demoCard.textContent, /In this example layer, this address falls outside the 2010 flood extent/);
+  for (const card of [planningCard, demoCard]) {
+    assert.equal(card.children.some((child) => child.className === "scenario-description"), false, "Results have no text under the status");
   }
 });
 
@@ -938,8 +950,7 @@ test("a hidden prototype layer is checked and can be shown without changing the 
   h.choose();
   const futureCard = h.element("address-scenarios").children[1];
   assert.equal(futureCard.querySelector(".scenario-status").className, "scenario-status inside");
-  assert.match(futureCard.textContent, /2010 flood event \(indicative\)/);
-  assert.match(futureCard.textContent, /Example only · not a record of the 2010 flood/);
+  assert.match(futureCard.textContent, /Flood Extent 2010 \(example only\)/);
   assert.equal(futureCard.querySelector("button").textContent, "Show layer on map");
   futureCard.querySelector("button").dispatch("click");
   assert.equal(h.map.hasLayer(h.layer("demo_2010")), true);
