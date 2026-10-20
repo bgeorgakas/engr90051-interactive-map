@@ -73,6 +73,50 @@ test("only an explicit search submits a trimmed Australian query with safe reque
   assert.equal(timers.size, 0);
 });
 
+test("the exact melb central alias accepts case and whitespace variations", async () => {
+  for (const query of ["melb central", "MELB CENTRAL", "MeLb CeNtRaL", "  melb central  ", "\tMeLb   CeNtRaL\n", "melb\tcentral"]) {
+    const { client, calls, timers } = setup();
+    await client.search(query);
+    assert.equal(calls.length, 1, query);
+    assert.equal(new URL(calls[0].url).searchParams.get("q"), "Melbourne Central", query);
+    assert.equal(timers.size, 0, query);
+  }
+});
+
+test("an alias search shares its cached result with canonical Melbourne Central", async () => {
+  const { client, calls } = setup(async () => response([fixture({ display_name: "Melbourne Central, Melbourne, Australia" })]));
+  const first = await client.search("  melb   central  ");
+  const canonical = await client.search("Melbourne Central");
+  const uppercaseAlias = await client.search("MELB CENTRAL");
+  assert.equal(calls.length, 1);
+  assert.equal(new URL(calls[0].url).searchParams.get("q"), "Melbourne Central");
+  assert.deepEqual(canonical, first);
+  assert.deepEqual(uppercaseAlias, first);
+  assert.notEqual(canonical, first);
+});
+
+test("canonical Melbourne Central is reused by an exact alias without a second request", async () => {
+  const { client, calls } = setup();
+  const canonical = await client.search("Melbourne Central");
+  assert.deepEqual(await client.search("\tMeLb  CeNtRaL  "), canonical);
+  assert.equal(calls.length, 1);
+  assert.equal(new URL(calls[0].url).searchParams.get("q"), "Melbourne Central");
+});
+
+test("other melb phrases and prefixed or suffixed aliases remain unchanged", async () => {
+  for (const query of [
+    "melb", "melb cbd", "melb airport", "north melb",
+    "near melb central", "123 melb central", "melb central station",
+    "melb central, Melbourne", "melb centralx", "melbcentral",
+    "  melb   central station  ",
+  ]) {
+    const { client, calls } = setup();
+    await client.search(query);
+    assert.equal(calls.length, 1, query);
+    assert.equal(new URL(calls[0].url).searchParams.get("q"), query.trim(), query);
+  }
+});
+
 for (const query of [null, undefined, 123, "", "  ", "ab", " x ", "x".repeat(201)]) {
   test(`invalid query ${JSON.stringify(query)} is never sent`, async () => {
     const { client, calls } = setup();

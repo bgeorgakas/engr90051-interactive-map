@@ -103,7 +103,9 @@
       if (typeof query !== "string" || query.trim().length < 3 || query.trim().length > 200) {
         throw failure("INVALID_QUERY", "Enter an address or place name between 3 and 200 characters.");
       }
-      const text = query.trim();
+      // Support this one common place-name abbreviation without changing other searches.
+      const trimmedQuery = query.trim();
+      const text = /^melb\s+central$/i.test(trimmedQuery) ? "Melbourne Central" : trimmedQuery;
       const box = normaliseViewbox(viewbox);
       const key = JSON.stringify([text, box]);
       if (cache.has(key)) return cloneResults(cache.get(key));
